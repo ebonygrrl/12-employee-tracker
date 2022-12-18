@@ -2,6 +2,8 @@
 const inquirer = require('inquirer');
 
 const getDepartments = require('./utils/mysql');
+const getRoles = require('./utils/mysql');
+const getEmployees = require('./utils/mysql');
 
 // start menu choices
 const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role'];
@@ -21,6 +23,20 @@ inquirer
             case 'View All Departments':
                 getDepartments();
                 break;
+            case 'View All Roles':
+                getRoles();
+                break;
+            case 'View All Employees':
+                getEmployees();
+                break;
+            case 'Add a Department':
+                break;
+            case 'Add a Role':
+                break;
+            case 'Add An Employee':
+                break;
+            case 'Update An Employee Role':
+                break;            
         }
     });  
 
