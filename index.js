@@ -1,9 +1,11 @@
 // app modules
 const inquirer = require('inquirer');
-const mysql = require('mysql2');
+
+const getDepartments = require('./utils/mysql');
 
 // start menu choices
-const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', new inquirer.Separator(), 'Add a Department', 'Add a Role', 'Add An Employee', new inquirer.Separator(), 'Update An Employee Role']
+const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role'];
+const selectRoles = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer'];
 
 inquirer
     .prompt([
@@ -13,14 +15,13 @@ inquirer
             message: 'What would you like to do?',
             choices: initOptions,
         }])
-    .then(answers => { 
-        const staff = new Manager(answers.fname, answers.id, answers.email, answers.office);
-
-        //add responses to empty array
-        output.push(staff);
-
-        //build rest of team
-        employeePrompt();
+    .then(answer => {
+        
+        switch(answer.start) {
+            case 'View All Departments':
+                getDepartments();
+                break;
+        }
     });  
 
 
