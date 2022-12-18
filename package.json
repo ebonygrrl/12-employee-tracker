@@ -1,0 +1,27 @@
+{
+  "name": "12-employee-tracker",
+  "version": "1.0.0",
+  "description": "Build a command-line application from scratch to manage a company's employee database, using Node.js, Inquirer, and MySQL.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "npm run test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ebonygrrl/12-employee-tracker.git"
+  },
+  "author": "Tori Booker",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ebonygrrl/12-employee-tracker/issues"
+  },
+  "homepage": "https://github.com/ebonygrrl/12-employee-tracker#readme",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "inquirer": "^8.2.4",
+    "mysql2": "^2.3.3"
+  }
+}
