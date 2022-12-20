@@ -21,19 +21,20 @@ const showRoleTables = sql => {
 
 // employees
 const showEmployeeTables = sql => {
+    console.log(sql); // need to put condition on null values
 
-    let newSql = sql.map((item) => (
-        { id: item.id, 
-          first: item.first_name, 
-          last: item.last_name, 
-          role: role_id, 
-          manager: manager_id, 
-          title: item.title, 
-          salary: item.salary
-        }
-    ));
+    // let newSql = sql.map((item) => (
+    //     { id: item.id, 
+    //       first: item.first_name, 
+    //       last: item.last_name, 
+    //       role: role_id, 
+    //       manager: manager_id, 
+    //       title: item.title, 
+    //       salary: item.salary
+    //     }
+    // ));
     
-    console.table(newSql);
+    // console.table(newSql);
 }  
 
 // export back to mysql as an object
