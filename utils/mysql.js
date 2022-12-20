@@ -1,11 +1,10 @@
+// app module
 const mysql = require('mysql2');
+// mysql login cred
 const connection = require('./connection');
-
 // deconstruct table objects
 const { showDeptTables, showRoleTables, showEmployeeTables } = require('./tables');
-
 // create the connection to database
-
 const db = mysql.createConnection(connection);
 
 //console.log(db);

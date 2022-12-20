@@ -13,10 +13,11 @@ const showDeptTables = sql => {
 
 // roles
 const showRoleTables = sql => {
+    console.log(sql);
 
-    let newSql = sql.map((item) => ({ id: item.id, title: item.title, salary: item.salary}));
+    // let newSql = sql.map((item) => ({ id: item.id, title: item.title, salary: item.salary}));
     
-    console.table(newSql);
+    // console.table(newSql);
 }  
 
 // employees
