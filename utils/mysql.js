@@ -1,6 +1,8 @@
 const mysql = require('mysql2');
 const connection = require('./connection');
-const {showDeptTables, showRoleTables, showEmployeeTables} = require('./tables');
+
+// deconstruct table objects
+const { showDeptTables, showRoleTables, showEmployeeTables } = require('./tables');
 
 // create the connection to database
 
@@ -22,35 +24,30 @@ const getDepartments = () => {
     });
 }
 
-// const getRoles = () => {  
-//     // simple query
-//     db.query(
-//         'SELECT * FROM role',
-//         function (err, results, fields) {
-//             if (err) throw err;
-//             console.log(results); // results contains rows returned by server
-//             showRoleTables(results);
-//         }
-//     );
-// }
+const getRoles = () => {  
+    // simple query
+    db.query('SELECT * FROM role', (err, results) => {
+            if (err) throw err;
+            //console.log(results); // results contains rows returned by server
+            showRoleTables(results);
+        }
+    );
+}
 
-// const getEmployees = () => {  
-//     // simple query
-//     db.query(
-//         'SELECT * FROM employee',
-//         function (err, results, fields) {
-//             if (err) throw err;
-//             //console.log(results); // results contains rows returned by server
-//             showEmployeeTables(results);
-//         }
-//     );
-// }
+const getEmployees = () => {  
+    // simple query
+    db.query('SELECT * FROM employee', (err, results) => {
+            if (err) throw err;
+            //console.log(results); // results contains rows returned by server
+            showEmployeeTables(results);
+        }
+    );
+}
 
-module.exports = getDepartments;
+// export to index as an object
+module.exports = { getDepartments, getRoles, getEmployees };
 
-//     getRoles();
-//     getEmployees();
-// };
+
 
 // https://stackoverflow.com/questions/67529729/mysql2-nodejs-how-to-build-a-complex-query
 // const sql = `

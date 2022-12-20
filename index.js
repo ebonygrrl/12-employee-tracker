@@ -1,6 +1,8 @@
 // app modules
 const inquirer = require('inquirer');
-const {getDepartments, getRoles, getEmployees} = require('./utils/mysql');
+
+//import mysql queries
+const { getDepartments, getRoles, getEmployees } = require('./utils/mysql');
 
 // start menu choices
 const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role'];
@@ -15,30 +17,32 @@ const init = async () => {
             message: 'What would you like to do?',
             choices: initOptions,
         }]);
+
+        return firstQuestion;
     }
 
-    // .then(answer => {
+    init().then(answer => {
         
-    //     switch(answer.start) {
-    //         case 'View All Departments':
-    //             getDepartments();
-    //             break;
-    //         case 'View All Roles':
-    //             getRoles();
-    //             break;
-    //         case 'View All Employees':
-    //             getEmployees();
-    //             break;
-    //         case 'Add a Department':
-    //             break;
-    //         case 'Add a Role':
-    //             break;
-    //         case 'Add An Employee':
-    //             break;
-    //         case 'Update An Employee Role':
-    //             break;            
-    //     }
-    // });  
+        switch(answer.start) {
+            case 'View All Departments':
+                getDepartments();
+                break;
+            case 'View All Roles':
+                getRoles();
+                break;
+            case 'View All Employees':
+                getEmployees();
+                break;
+            case 'Add a Department':
+                break;
+            case 'Add a Role':
+                break;
+            case 'Add An Employee':
+                break;
+            case 'Update An Employee Role':
+                break;            
+        }
+    });  
 
 
 
@@ -51,5 +55,3 @@ const init = async () => {
 
 // add department: Service
 // add role: Customer Service
-
-init();
