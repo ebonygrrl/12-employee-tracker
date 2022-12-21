@@ -7,21 +7,18 @@ const { getDepartments, getRoles, getEmployees } = require('./utils/mysql');
 // start menu choices
 const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role'];
 const selectRoles = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer'];
+const employees = [];
 
 
-const init = async () => {
-    const firstQuestion = await inquirer.prompt([
+const init = () => {
+    inquirer.prompt([
         {
             type: 'list',
             name: 'start',
             message: 'What would you like to do?',
             choices: initOptions,
-        }]);
-
-        return firstQuestion;
-    }
-
-    init().then(answer => {
+        }])
+        .then(answer => {
         
         switch(answer.start) {
             case 'View All Departments':
@@ -43,7 +40,7 @@ const init = async () => {
                 break;            
         }
     });  
-
+}
 
 
 
@@ -55,3 +52,5 @@ const init = async () => {
 
 // add department: Service
 // add role: Customer Service
+
+init();
