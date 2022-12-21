@@ -5,7 +5,8 @@ const connection = require('./connection');
 // deconstruct table objects
 //const { showDeptTables, showRoleTables, showEmployeeTables } = require('./tables');
 
-// create the connection to database
+const connected = () => {
+//create the connection to database
 const db = mysql.createConnection(connection);
 
 //console.log(db);
@@ -14,6 +15,9 @@ db.connect((err) => {
   if (err) { throw err; }
   //console.log("database connected!");
 });
+
+return db;
+}
 
 // const getDepartments = () => { 
 //     //simple query
@@ -45,16 +49,7 @@ db.connect((err) => {
 // }
 
 // export to index as an object
-module.exports = function() {
-    const db = mysql.createConnection(connection);
-
-//console.log(db);
-
-db.connect((err) => {
-  if (err) { throw err; }
-  //console.log("database connected!");
-});
-};
+module.exports = connected;
 
 
 
