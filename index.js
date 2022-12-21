@@ -1,8 +1,13 @@
+// get class
+const Queries = require('./lib/queries');
+
 // app modules
 const inquirer = require('inquirer');
 
 //import mysql queries
-const { getDepartments, getRoles, getEmployees } = require('./utils/mysql');
+//const { getDepartments, getRoles, getEmployees } = require('./utils/mysql');
+
+
 
 // start menu choices
 const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role'];
@@ -22,7 +27,9 @@ const init = () => {
         
         switch(answer.start) {
             case 'View All Departments':
-                getDepartments();
+                const query = new Queries(answer.start);
+                //console.log(query);
+                query.getDepartments();
                 break;
             case 'View All Roles':
                 getRoles();

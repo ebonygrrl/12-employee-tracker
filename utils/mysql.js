@@ -3,7 +3,8 @@ const mysql = require('mysql2');
 // mysql login cred
 const connection = require('./connection');
 // deconstruct table objects
-const { showDeptTables, showRoleTables, showEmployeeTables } = require('./tables');
+//const { showDeptTables, showRoleTables, showEmployeeTables } = require('./tables');
+
 // create the connection to database
 const db = mysql.createConnection(connection);
 
@@ -14,37 +15,46 @@ db.connect((err) => {
   //console.log("database connected!");
 });
 
-const getDepartments = () => { 
-    //simple query
-    db.query('SELECT * FROM department', (err, results) => {
-        if (err) throw err;
-        //console.log(results); // results contains rows returned by server
-        showDeptTables(results);
-    });
-}
+// const getDepartments = () => { 
+//     //simple query
+//     db.query('SELECT * FROM department', (err, results) => {
+//         if (err) throw err;
+//         //console.log(results); // results contains rows returned by server
+//         showDeptTables(results);
+//     });
+// }
 
-const getRoles = () => {  
-    // simple query
-    db.query('SELECT * FROM role', (err, results) => {
-            if (err) throw err;
-            //console.log(results); // results contains rows returned by server
-            showRoleTables(results);
-        }
-    );
-}
+// const getRoles = () => {  
+//     // simple query
+//     db.query('SELECT * FROM role', (err, results) => {
+//             if (err) throw err;
+//             //console.log(results); // results contains rows returned by server
+//             showRoleTables(results);
+//         }
+//     );
+// }
 
-const getEmployees = () => {  
-    // simple query
-    db.query('SELECT * FROM employee', (err, results) => {
-            if (err) throw err;
-            //console.log(results); // results contains rows returned by server
-            showEmployeeTables(results);
-        }
-    );
-}
+// const getEmployees = () => {  
+//     // simple query
+//     db.query('SELECT * FROM employee', (err, results) => {
+//             if (err) throw err;
+//             //console.log(results); // results contains rows returned by server
+//             showEmployeeTables(results);
+//         }
+//     );
+// }
 
 // export to index as an object
-module.exports = { getDepartments, getRoles, getEmployees };
+module.exports = function() {
+    const db = mysql.createConnection(connection);
+
+//console.log(db);
+
+db.connect((err) => {
+  if (err) { throw err; }
+  //console.log("database connected!");
+});
+};
 
 
 
