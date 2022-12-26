@@ -4,15 +4,30 @@ const dbQuery = require('./lib/queries');
 // app modules
 const inquirer = require('inquirer');
 
-//import mysql queries
-//const { getDepartments, getRoles, getEmployees } = require('./utils/mysql');
-
-
-
-// start menu choices
+// inquirer choices
 const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role'];
 const selectRoles = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer'];
-const employees = [];
+
+// inquirer questions
+const addDepartmentQuestion = [
+    {
+        type: 'input',
+        name: 'dept_name',
+        message: 'What is the name of the department?'
+    }
+];
+
+const addRoleQuestions = [
+
+];
+
+const addEmployeeQuesions = [
+
+];
+
+const updateRoleQuestions = [
+
+];
 
 
 const init = () => {
@@ -41,15 +56,31 @@ const init = () => {
                     connect.getEmployees();
                     break;
                 case 'Add a Department':
+                    // function
                     break;
                 case 'Add a Role':
+                    // function
                     break;
                 case 'Add An Employee':
+                    // connect = new dbQuery('INSERT INTO employee (id, first_name, last_name, role_id, manager_id) VALUES ('NULL', ${this.fname}, ${this.lname}, ${this.role}, ${this.manager});');
+                    // connect.addEmployee();
+                    // function
                     break;
                 case 'Update An Employee Role':
+                    // connect = new dbQuery('UPDATE employee SET address = 'Canyon 123' WHERE address = 'Valley 345'');
+                    // connect.updateEmployee();
+                    // function 
                     break;            
         }
     });  
 }
+
+const addDepartment = () => {};
+
+const addRole = () => {};
+
+const addEmployee = () => {};
+
+const updateEmployee = () => {};
 
 init();
