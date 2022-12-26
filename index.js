@@ -1,5 +1,6 @@
-// get class
-const dbQuery = require('./lib/queries');
+// get classes
+const dbQuery = require('./lib/query-db');
+const modifyDb = require('./lib/modify-db');
 
 // app modules
 const inquirer = require('inquirer');
@@ -7,6 +8,7 @@ const inquirer = require('inquirer');
 // inquirer choices
 const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role'];
 const selectRoles = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer'];
+const selectEmployee = [];
 
 // inquirer questions
 const addDepartmentQuestion = [
@@ -18,15 +20,80 @@ const addDepartmentQuestion = [
 ];
 
 const addRoleQuestions = [
-
+    {
+        type: 'input',
+        name: 'role_name',
+        message: 'What is the name of the role?'
+    },
+    {
+        type: 'input',
+        name: 'salary',
+        message: 'What is the salary of the role?',
+        validate(input) {
+            if (/^\d+$/g.test(input)) {
+                return true;
+            }
+            throw Error('Please enter numbers only.');
+        },
+    },
+    {
+        type: 'list',
+        name: 'role_dept',
+        message: 'Which department does the role belong to?',
+        choices: selectRoles,
+    }
 ];
 
 const addEmployeeQuesions = [
-
+    {
+        type: 'input',
+        name: 'fname',
+        message: 'What is the employee\'s first name?',
+        validate(input) {
+             if (/^[A-Z][a-z]+$/g.test(input)) {
+                 return true;
+             }
+             throw Error('Please be sure name is capitalized and enter first name only.');
+        },
+    },
+    {
+        type: 'input',
+        name: 'lname',
+        message: 'What is the employee\'s last name?',
+        validate(input) {
+             if (/^[A-Z][a-z]+$/g.test(input)) {
+                 return true;
+             }
+             throw Error('Please be sure name is capitalized and enter last name only.');
+        },
+    },
+    {
+        type: 'list',
+        name: 'role',
+        message: 'What is the employee\'s role?',
+        choices: selectRoles,
+    },
+    {
+        type: 'list',
+        name: 'manager',
+        message: 'Who is the employee\'s manager?',
+        choices: selectEmployee,
+    }
 ];
 
 const updateRoleQuestions = [
-
+    {
+        type: 'list',
+        name: 'employee',
+        message: 'Which employee\'s role do you want to update?',
+        choices: selectEmployee,
+    },
+    {
+        type: 'list',
+        name: 'new_role',
+        message: 'Which role do you want to assign the selected employee?',
+        choices: selectRoles,
+    }
 ];
 
 
@@ -56,7 +123,7 @@ const init = () => {
                     connect.getEmployees();
                     break;
                 case 'Add a Department':
-                    // function
+                    addDepartment();
                     break;
                 case 'Add a Role':
                     // function
@@ -75,7 +142,16 @@ const init = () => {
     });  
 }
 
-const addDepartment = () => {};
+const addDepartment = async () => {
+    inquirer
+        .prompt(addDepartmentQuestion)
+        .then(answer => {
+            // check if department name already exist
+            connect = new modifyDb(`SELECT dept_name FROM department WHERE dept_name = '${answer.dept_name}'`, answer.dept_name);
+            connect.addDept();
+            init();
+        });   
+};
 
 const addRole = () => {};
 
