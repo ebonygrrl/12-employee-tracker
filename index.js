@@ -49,15 +49,4 @@ const init = () => {
     });  
 }
 
-
-
-// all departments
-// Engineering, Finance, Legal, Sales
-
-// all roles
-// Sales Lead, Salesperson, Lead Engineer, Software Engineer, Account Manager, Accountant, Legal Team Lead, Lawyer
-
-// add department: Service
-// add role: Customer Service
-
 init();
