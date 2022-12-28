@@ -114,17 +114,18 @@ const init = () => {
         switch(answer.start) {
             case 'View All Departments':
                 connect = new dbQuery('SELECT * FROM department');
-                connect.getDepartments();
+                connect.queryDb();
                 setTimeout(() => {init()},1000);
                 break;
             case 'View All Roles':
                 connect = new dbQuery('SELECT * FROM role');
-                connect.getRoles();
+                connect.queryDb();
                 setTimeout(() => {init()},1000);
                 break;
             case 'View All Employees':
                 connect = new dbQuery('SELECT * FROM employee');
-                connect.getEmployees();
+                connect.queryDb();
+                setTimeout(() => {init()},1000);
                 break;
             case 'Add a Department':
                 addDepartment();
