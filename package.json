@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/ebonygrrl/12-employee-tracker#readme",
   "dependencies": {
+    "command-line-draw": "^1.2.3",
     "console.table": "^0.10.0",
     "inquirer": "^8.2.4",
     "mysql2": "^2.3.3"
