@@ -8,8 +8,12 @@ const modifyDb = require('./lib/modify-db');
 // app modules
 const inquirer = require('inquirer');
 
+// reserve variable for queries
+let connect;
+
 // inquirer choices
-const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role'];
+//const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role', 'Exit'];
+const initOptions = ['Add a Department', 'Exit'];
 const selectDepts = ['Engineering', 'Finance', 'Legal', 'Sales'];
 const selectRoles = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer'];
 const selectEmployee = [];
@@ -109,8 +113,6 @@ const init = () => {
         choices: initOptions,
     }]).then(answer => {   
 
-        let connect;
-
         switch(answer.start) {
             case 'View All Departments':
                 connect = new dbQuery('SELECT * FROM department');
@@ -150,18 +152,13 @@ const init = () => {
     });
 }
 
-// const viewAllDept = () => {    
-//     connect = new dbQuery('SELECT * FROM department');
-//     connect.getDepartments();
-// }
-
 const addDepartment = () => {
     inquirer
         .prompt(addDepartmentQuestion)
         .then(answer => {
             // check if department name already exist
-            connect = new modifyDb(`SELECT dept_name FROM department WHERE dept_name = '${answer.dept_name}'`, answer.dept_name);
-            connect.addDept();
+            connect = new modifyDb(`SELECT dept_name FROM department WHERE EXISTS (SELECT * FROM department WHERE dept_name = '${answer.dept_name}')`);
+            connect.addDept(answer.dept_name);
             setTimeout(() => {init()},1000);
         });   
 };
@@ -170,10 +167,10 @@ const addRole = () => {
     inquirer
         .prompt(addRoleQuestions)
         .then(answers => {
-            let responses = [answers.role_name, answers.salary, answers.role_dept];
+            //let responses = [answers.role_name, answers.salary, answers.role_dept];
             // check if department name already exist
-            connect = new modifyDb(`SELECT title FROM role WHERE title = '${answers.role_name}'`, responses);
-            connect.addRole();
+            connect = new modifyDb(`SELECT EXISTS (SELECT title FROM role WHERE title = '${answers.role_name}')`);
+            connect.addRole(answers.role_name, answers.salary, answers.role_dept);
             setTimeout(() => {init()},1000);
         });   
 };
