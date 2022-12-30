@@ -12,8 +12,8 @@ const inquirer = require('inquirer');
 let connect;
 
 // inquirer choices
-//const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role', 'Exit'];
-const initOptions = ['Add a Department', 'Exit'];
+const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role', 'Exit'];
+//const initOptions = ['Add a Department', 'Exit'];
 const selectDepts = ['Engineering', 'Finance', 'Legal', 'Sales'];
 const selectRoles = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer'];
 const selectEmployee = [];
@@ -115,13 +115,11 @@ const init = () => {
 
         switch(answer.start) {
             case 'View All Departments':
-                connect = new dbQuery('SELECT * FROM department');
-                connect.queryDb();
+                getDepts();
                 setTimeout(() => {init()},1000);
                 break;
             case 'View All Roles':
-                connect = new dbQuery('SELECT * FROM role');
-                connect.queryDb();
+                getRoles();
                 setTimeout(() => {init()},1000);
                 break;
             case 'View All Employees':
@@ -152,6 +150,21 @@ const init = () => {
     });
 }
 
+const getDepts = () => {
+    connect = new dbQuery('SELECT * FROM department');
+    connect.queryDb();
+}
+
+const getRoles = () => {    
+    connect = new dbQuery('SELECT * FROM role');
+    connect.queryDb();
+}
+
+const getStaff = () => {
+    connect = new dbQuery('SELECT * FROM employee');
+    connect.queryDb();
+}
+
 const addDepartment = () => {
     inquirer
         .prompt(addDepartmentQuestion)
@@ -159,7 +172,14 @@ const addDepartment = () => {
             // check if department name already exist
             connect = new modifyDb(`SELECT dept_name FROM department WHERE EXISTS (SELECT * FROM department WHERE dept_name = '${answer.dept_name}')`);
             connect.addDept(answer.dept_name);
+            // get updated table
+            connect = new dbQuery('SELECT * FROM department');
+            
             setTimeout(() => {init()},1000);
+            // update department array
+            let data = connect.queryDbArr();
+            selectDepts.push(data)
+            console.log(`this is the data \r\r ${selectDepts}`);
         });   
 };
 
