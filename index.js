@@ -14,7 +14,8 @@ let connect;
 // inquirer choices
 const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role', 'Exit'];
 //const initOptions = ['Add a Department', 'Exit'];
-const selectDepts = ['Engineering', 'Finance', 'Legal', 'Sales'];
+//const selectDepts = ['Engineering', 'Finance', 'Legal', 'Sales'];
+const selectDepts = [];
 const selectRoles = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer'];
 const selectEmployee = [];
 
@@ -104,6 +105,19 @@ const updateRoleQuestions = [
     }
 ];
 
+// const queryOutput = (results) => {
+//     const query = [];
+
+//     for (let i=0; i < results.length; i++ ) {
+//         let data = results[i].dept_name;
+
+//         query.push(data);
+//     }
+//     let output = JSON.stringify(query);
+//     console.log(`output: ${output}`);
+
+//     return output;
+// }
 
 const init = () => {
     inquirer.prompt([{
@@ -116,16 +130,12 @@ const init = () => {
         switch(answer.start) {
             case 'View All Departments':
                 getDepts();
-                setTimeout(() => {init()},1000);
                 break;
             case 'View All Roles':
                 getRoles();
-                setTimeout(() => {init()},1000);
                 break;
             case 'View All Employees':
-                connect = new dbQuery('SELECT * FROM employee');
-                connect.queryDb();
-                setTimeout(() => {init()},1000);
+                getStaff();
                 break;
             case 'Add a Department':
                 addDepartment();
@@ -150,19 +160,31 @@ const init = () => {
     });
 }
 
+// const getUpdatedDb = (table) => {
+//     // get updated table
+//     connect = new dbQuery(`SELECT * FROM ${table}`);
+//     // update department array
+//     //let data = connect.queryDbArr();
+//     //selectDepts.push(data)
+//     //console.log(connect.queryDbArr());
+// }
+
 const getDepts = () => {
     connect = new dbQuery('SELECT * FROM department');
     connect.queryDb();
+    setTimeout(() => {init()},1000);
 }
 
 const getRoles = () => {    
     connect = new dbQuery('SELECT * FROM role');
     connect.queryDb();
+    setTimeout(() => {init()},1000);
 }
 
 const getStaff = () => {
     connect = new dbQuery('SELECT * FROM employee');
     connect.queryDb();
+    setTimeout(() => {init()},1000);
 }
 
 const addDepartment = () => {
@@ -172,14 +194,11 @@ const addDepartment = () => {
             // check if department name already exist
             connect = new modifyDb(`SELECT dept_name FROM department WHERE EXISTS (SELECT * FROM department WHERE dept_name = '${answer.dept_name}')`);
             connect.addDept(answer.dept_name);
-            // get updated table
-            connect = new dbQuery('SELECT * FROM department');
             
-            setTimeout(() => {init()},1000);
-            // update department array
-            let data = connect.queryDbArr();
-            selectDepts.push(data)
-            console.log(`this is the data \r\r ${selectDepts}`);
+            setTimeout(() => {
+                //getUpdatedDb('department');
+                init();
+            }, 1000);
         });   
 };
 
@@ -200,3 +219,4 @@ const addEmployee = () => {};
 const updateEmployee = () => {};
 
 init();
+//getUpdatedDb('department')
