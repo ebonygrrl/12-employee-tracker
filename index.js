@@ -2,11 +2,13 @@
 const myDb = require('./utils/connection');
 
 // get classes
-const dbQuery = require('./lib/query-db');
-const modifyDb = require('./lib/modify-db');
+const dbQuery = require('./lib/query');
+const Department = require('./lib/department-query');
+const Role = require('./lib/role-query');
 
 // app modules
 const inquirer = require('inquirer');
+const cTable = require('console.table');
 
 // reserve variable for queries
 let connect;
@@ -15,9 +17,9 @@ let connect;
 const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role', 'Exit'];
 //const initOptions = ['Add a Department', 'Exit'];
 //const selectDepts = ['Engineering', 'Finance', 'Legal', 'Sales'];
-const selectDepts = [];
-const selectRoles = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer'];
-const selectEmployee = [];
+let selectDepts = [];
+let selectRoles = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer'];
+let selectEmployee = [];
 
 // inquirer questions
 const addDepartmentQuestion = [
@@ -29,22 +31,22 @@ const addDepartmentQuestion = [
 ];
 
 const addRoleQuestions = [
-    {
-        type: 'input',
-        name: 'role_name',
-        message: 'What is the name of the role?'
-    },
-    {
-        type: 'input',
-        name: 'salary',
-        message: 'What is the salary of the role?',
-        validate(input) {
-            if (/^\d+$/g.test(input)) {
-                return true;
-            }
-            throw Error('Please enter numbers only.');
-        },
-    },
+    // {
+    //     type: 'input',
+    //     name: 'role_name',
+    //     message: 'What is the name of the role?'
+    // },
+    // {
+    //     type: 'input',
+    //     name: 'salary',
+    //     message: 'What is the salary of the role?',
+    //     validate(input) {
+    //         if (/^\d+$/g.test(input)) {
+    //             return true;
+    //         }
+    //         throw Error('Please enter numbers only.');
+    //     },
+    // },
     {
         type: 'list',
         name: 'role_dept',
@@ -105,21 +107,9 @@ const updateRoleQuestions = [
     }
 ];
 
-// const queryOutput = (results) => {
-//     const query = [];
-
-//     for (let i=0; i < results.length; i++ ) {
-//         let data = results[i].dept_name;
-
-//         query.push(data);
-//     }
-//     let output = JSON.stringify(query);
-//     console.log(`output: ${output}`);
-
-//     return output;
-// }
-
+// start here
 const init = () => {
+
     inquirer.prompt([{
         type: 'list',
         name: 'start',
@@ -129,13 +119,13 @@ const init = () => {
 
         switch(answer.start) {
             case 'View All Departments':
-                getDepts();
+                getViews('department');
                 break;
             case 'View All Roles':
-                getRoles();
+                getViews('role');
                 break;
             case 'View All Employees':
-                getStaff();
+                getViews('employee');
                 break;
             case 'Add a Department':
                 addDepartment();
@@ -160,31 +150,11 @@ const init = () => {
     });
 }
 
-// const getUpdatedDb = (table) => {
-//     // get updated table
-//     connect = new dbQuery(`SELECT * FROM ${table}`);
-//     // update department array
-//     //let data = connect.queryDbArr();
-//     //selectDepts.push(data)
-//     //console.log(connect.queryDbArr());
-// }
-
-const getDepts = () => {
-    connect = new dbQuery('SELECT * FROM department');
+const getViews = (table, display) => {
+    connect = new dbQuery(`SELECT * FROM ${table}`);
     connect.queryDb();
-    setTimeout(() => {init()},1000);
-}
 
-const getRoles = () => {    
-    connect = new dbQuery('SELECT * FROM role');
-    connect.queryDb();
-    setTimeout(() => {init()},1000);
-}
-
-const getStaff = () => {
-    connect = new dbQuery('SELECT * FROM employee');
-    connect.queryDb();
-    setTimeout(() => {init()},1000);
+    setTimeout(() => {init()}, 1000);
 }
 
 const addDepartment = () => {
@@ -192,25 +162,30 @@ const addDepartment = () => {
         .prompt(addDepartmentQuestion)
         .then(answer => {
             // check if department name already exist
-            connect = new modifyDb(`SELECT dept_name FROM department WHERE EXISTS (SELECT * FROM department WHERE dept_name = '${answer.dept_name}')`);
+            connect = new Department(`SELECT dept_name FROM department WHERE EXISTS (SELECT * FROM department WHERE dept_name = '${answer.dept_name}')`);
             connect.addDept(answer.dept_name);
             
             setTimeout(() => {
-                //getUpdatedDb('department');
-                init();
+                getViews('department', false);
+                init()
             }, 1000);
         });   
 };
 
 const addRole = () => {
+    console.log(selectDepts);
     inquirer
         .prompt(addRoleQuestions)
         .then(answers => {
-            //let responses = [answers.role_name, answers.salary, answers.role_dept];
-            // check if department name already exist
-            connect = new modifyDb(`SELECT EXISTS (SELECT title FROM role WHERE title = '${answers.role_name}')`);
-            connect.addRole(answers.role_name, answers.salary, answers.role_dept);
-            setTimeout(() => {init()},1000);
+            console.log(answers.role_dept);
+            // check if role name already exist
+            //connect = new Role(`SELECT title FROM role WHERE EXISTS (SELECT * FROM role WHERE title = '${answers.role_name}')`);
+            //connect.addRole(answers.role_name, answers.salary, answers.role_dept);
+            //console.log(answers.role_dept);
+            setTimeout(() => {
+                //getViews('role', false);
+                init()
+            }, 1000);
         });   
 };
 
@@ -219,4 +194,3 @@ const addEmployee = () => {};
 const updateEmployee = () => {};
 
 init();
-//getUpdatedDb('department')
