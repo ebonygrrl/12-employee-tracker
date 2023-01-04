@@ -18,8 +18,6 @@ let connect;
 
 // inquirer choices
 const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role', 'Exit'];
-//const initOptions = ['Add a Department', 'Exit'];
-//const selectDepts = ['Engineering', 'Finance', 'Legal', 'Sales'];
 let selectDepts = [];
 let selectRoles = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer'];
 let selectEmployee = [];
@@ -34,22 +32,22 @@ const addDepartmentQuestion = [
 ];
 
 const addRoleQuestions = [
-    // {
-    //     type: 'input',
-    //     name: 'role_name',
-    //     message: 'What is the name of the role?'
-    // },
-    // {
-    //     type: 'input',
-    //     name: 'salary',
-    //     message: 'What is the salary of the role?',
-    //     validate(input) {
-    //         if (/^\d+$/g.test(input)) {
-    //             return true;
-    //         }
-    //         throw Error('Please enter numbers only.');
-    //     },
-    // },
+    {
+        type: 'input',
+        name: 'role_name',
+        message: 'What is the name of the role?'
+    },
+    {
+        type: 'input',
+        name: 'salary',
+        message: 'What is the salary of the role?',
+        validate(input) {
+            if (/^\d+$/g.test(input)) {
+                return true;
+            }
+            throw Error('Please enter numbers only.');
+        },
+    },
     {
         type: 'list',
         name: 'role_dept',
@@ -112,11 +110,14 @@ const updateRoleQuestions = [
 
 // start here
 const init = () => {
-    // get db fields
+    // get db fields populate arrays
     getViews('department');
     getViews('role');
     getViews('employee');
+    menu();
+};
 
+const menu = () => {
     // main menu
     inquirer.prompt([{
         type: 'list',
@@ -127,13 +128,13 @@ const init = () => {
 
         switch(answer.start) {
             case 'View All Departments':
-                getViews('department', true);
+                getViews('department', true, true);
                 break;
             case 'View All Roles':
-                getViews('role', true);
+                getViews('role', true, true);
                 break;
             case 'View All Employees':
-                getViews('employee', true);
+                getViews('employee', true, true);
                 break;
             case 'Add a Department':
                 addDepartment();
@@ -158,8 +159,8 @@ const init = () => {
     });
 }
 
-const getViews = (table, display) => {
-    
+const getViews = (table, display, timeout) => {
+    // myDb class, queryDb method
     myDb.queryDb(`SELECT * FROM ${table}`)
         .then(results => { 
             // only show table when desired
@@ -197,31 +198,37 @@ const getViews = (table, display) => {
         })
         .catch(err => { throw err });
         //.then(() => { myDb.end() });
-        
+
     //connect = new dbQuery(`SELECT * FROM ${table}`);
     //connect.queryDb();
 
-    setTimeout(() => {init()}, 1000);
+    if (timeout) setTimeout(() => {menu()}, 1000);
 }
 
 const addDepartment = () => {
     inquirer
         .prompt(addDepartmentQuestion)
         .then(answer => {
-            // check if department name already exist
-            connect = new Department(`SELECT dept_name FROM department WHERE EXISTS (SELECT * FROM department WHERE dept_name = '${answer.dept_name}')`);
-            connect.addDept(answer.dept_name);
-            
-            setTimeout(() => {
-                getViews('department');
-                init()
-            }, 1000);
+            myDb.queryDb(`SELECT dept_name FROM department WHERE EXISTS (SELECT * FROM department WHERE dept_name = '${answer.dept_name}')`)
+                .then(results => {
+                //console.log(results[0].length);
+                if (results.length > 0) {
+                    console.log('\n Department already exist in database. \n');
+                } else { 
+                    myDb.queryDb(`INSERT INTO department(dept_name) VALUES ('${answer.dept_name}')`)
+                        .then(() => {
+                            console.log(`\n ${answer.dept_name} was successfully added to Departments. \n`);
+                        })
+                        .catch(err => { throw err })
+                        //.then(() => { myDb.end });
+                }
+            })
+            .catch(err => { throw err })            
+            .then(() => { getViews('department', false, true) });
         });   
 };
 
 const addRole = () => {
-    getViews('department');
-    console.log(selectDepts);
     inquirer
         .prompt(addRoleQuestions)
         .then(answers => {
@@ -232,7 +239,7 @@ const addRole = () => {
             //console.log(answers.role_dept);
             setTimeout(() => {
                 getViews('role');
-                init()
+                menu()
             }, 1000);
         });   
 };
