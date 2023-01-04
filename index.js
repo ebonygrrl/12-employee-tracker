@@ -1,10 +1,13 @@
 // database connection
-const myDb = require('./utils/connection');
+const myDbConfig = require('./utils/connection');
 
 // get classes
 const dbQuery = require('./lib/query');
 const Department = require('./lib/department-query');
 const Role = require('./lib/role-query');
+
+// wire db connection to query class
+let myDb = new dbQuery(myDbConfig);
 
 // app modules
 const inquirer = require('inquirer');
@@ -109,7 +112,12 @@ const updateRoleQuestions = [
 
 // start here
 const init = () => {
+    // get db fields
+    getViews('department');
+    getViews('role');
+    getViews('employee');
 
+    // main menu
     inquirer.prompt([{
         type: 'list',
         name: 'start',
@@ -119,13 +127,13 @@ const init = () => {
 
         switch(answer.start) {
             case 'View All Departments':
-                getViews('department');
+                getViews('department', true);
                 break;
             case 'View All Roles':
-                getViews('role');
+                getViews('role', true);
                 break;
             case 'View All Employees':
-                getViews('employee');
+                getViews('employee', true);
                 break;
             case 'Add a Department':
                 addDepartment();
@@ -151,8 +159,47 @@ const init = () => {
 }
 
 const getViews = (table, display) => {
-    connect = new dbQuery(`SELECT * FROM ${table}`);
-    connect.queryDb();
+    
+    myDb.queryDb(`SELECT * FROM ${table}`)
+        .then(results => { 
+            // only show table when desired
+            if (display) console.table(results); 
+
+            // populate arrays
+            switch(table) {
+                case 'department':
+                    selectDepts = [];
+                    results.forEach((i) => {
+                        //console.log(i.dept_name);
+                        selectDepts.push(i.dept_name);
+                    });
+                    //console.log(selectDepts);
+                    break;
+                case 'role':
+                    selectRoles = [];
+                    results.forEach((i) => {
+                        //console.log(i);
+                        selectRoles.push(i.title);
+                    });
+                    //console.log(selectRoles);
+                    break;
+                case 'employee':
+                    selectEmployee = [];
+                    results.forEach((i) => {
+                        //console.log(`${i.last_name}, ${i.first_name}`);
+                        let employeeName = `${i.last_name}, ${i.first_name}`
+                        selectEmployee.push(employeeName);
+                    });
+                    //console.log(selectEmployee);
+                    break;
+            } 
+
+        })
+        .catch(err => { throw err });
+        //.then(() => { myDb.end() });
+        
+    //connect = new dbQuery(`SELECT * FROM ${table}`);
+    //connect.queryDb();
 
     setTimeout(() => {init()}, 1000);
 }
@@ -166,13 +213,14 @@ const addDepartment = () => {
             connect.addDept(answer.dept_name);
             
             setTimeout(() => {
-                getViews('department', false);
+                getViews('department');
                 init()
             }, 1000);
         });   
 };
 
 const addRole = () => {
+    getViews('department');
     console.log(selectDepts);
     inquirer
         .prompt(addRoleQuestions)
@@ -183,7 +231,7 @@ const addRole = () => {
             //connect.addRole(answers.role_name, answers.salary, answers.role_dept);
             //console.log(answers.role_dept);
             setTimeout(() => {
-                //getViews('role', false);
+                getViews('role');
                 init()
             }, 1000);
         });   
