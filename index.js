@@ -1,10 +1,8 @@
 // database connection
 const myDbConfig = require('./utils/connection');
 
-// get classes
+// get class
 const dbQuery = require('./lib/query');
-const Department = require('./lib/department-query');
-const Role = require('./lib/role-query');
 
 // wire db connection to query class
 let myDb = new dbQuery(myDbConfig);
@@ -12,9 +10,6 @@ let myDb = new dbQuery(myDbConfig);
 // app modules
 const inquirer = require('inquirer');
 const cTable = require('console.table');
-
-// reserve variable for queries
-let connect;
 
 // inquirer choices
 const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role', 'Exit'];
@@ -143,14 +138,10 @@ const menu = () => {
                 addRole();
                 break;
             case 'Add An Employee':
-                // connect = new dbQuery('INSERT INTO employee (id, first_name, last_name, role_id, manager_id) VALUES ('NULL', ${this.fname}, ${this.lname}, ${this.role}, ${this.manager});');
-                // connect.addEmployee();
-                // function
+                addEmployee();
                 break;
             case 'Update An Employee Role':
-                // connect = new dbQuery('UPDATE employee SET address = 'Canyon 123' WHERE address = 'Valley 345'');
-                // connect.updateEmployee();
-                // function 
+                updateEmployee();
                 break;
             case 'Exit':
                 myDb.end();
@@ -169,7 +160,7 @@ const getViews = (table, display, timeout) => {
             // populate arrays
             switch(table) {
                 case 'department':
-                    selectDepts = [];
+                    selectDepts = []; // clear array before push to avoid duplicate entries
                     results.forEach((i) => {
                         //console.log(i.dept_name);
                         selectDepts.push(i.dept_name);
@@ -199,9 +190,6 @@ const getViews = (table, display, timeout) => {
         .catch(err => { throw err });
         //.then(() => { myDb.end() });
 
-    //connect = new dbQuery(`SELECT * FROM ${table}`);
-    //connect.queryDb();
-
     if (timeout) setTimeout(() => {menu()}, 1000);
 }
 
@@ -209,6 +197,7 @@ const addDepartment = () => {
     inquirer
         .prompt(addDepartmentQuestion)
         .then(answer => {
+            // check if entry already exist
             myDb.queryDb(`SELECT dept_name FROM department WHERE EXISTS (SELECT * FROM department WHERE dept_name = '${answer.dept_name}')`)
                 .then(results => {
                 //console.log(results[0].length);
@@ -232,20 +221,48 @@ const addRole = () => {
     inquirer
         .prompt(addRoleQuestions)
         .then(answers => {
-            console.log(answers.role_dept);
             // check if role name already exist
-            //connect = new Role(`SELECT title FROM role WHERE EXISTS (SELECT * FROM role WHERE title = '${answers.role_name}')`);
+            myDb.queryDb(`SELECT title FROM role WHERE EXISTS (SELECT * FROM role WHERE title = '${answers.role_name}')`)
+                .then(results => {
+                    if (results.length > 0) {
+                        console.log('\n Role already exist in database. \n');
+                    } else { 
+                        myDb.queryDb(`INSERT INTO role(title) VALUES ('${title}, ${salary}, ')`)
+                            .then(() => {
+                                console.log(`\n ${answers.role_name} was successfully added to Roles. \n`);
+                            })
+                            .catch(err => { throw err })
+                            //.then(() => { myDb.end });
+                    }
+                })
             //connect.addRole(answers.role_name, answers.salary, answers.role_dept);
-            //console.log(answers.role_dept);
-            setTimeout(() => {
-                getViews('role');
-                menu()
-            }, 1000);
+            //console.log(answers.role_dept);            
+            .catch(err => { throw err })            
+            .then(() => { getViews('role', false, true) });
         });   
 };
 
-const addEmployee = () => {};
+const addEmployee = () => {
+    inquirer
+        .prompt(addEmployeeQuesions)
+        .then(answers => {
+            // check if employee already exist
 
-const updateEmployee = () => {};
+        });
+        // connect = new dbQuery('INSERT INTO employee (id, first_name, last_name, role_id, manager_id) VALUES ('NULL', ${this.fname}, ${this.lname}, ${this.role}, ${this.manager});');
+        // connect.addEmployee();
+        // function
+};
+
+const updateEmployee = () => {
+    inquirer
+        .prompt(updateRoleQuestions)
+        .then(answers => {
+
+        });
+    // connect = new dbQuery('UPDATE employee SET address = 'Canyon 123' WHERE address = 'Valley 345'');
+    // connect.updateEmployee();
+    // function 
+};
 
 init();
