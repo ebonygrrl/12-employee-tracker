@@ -14,7 +14,7 @@ const cTable = require('console.table');
 // inquirer choices
 const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role', 'Exit'];
 let selectDepts = [];
-let selectRoles = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Account Manager', 'Accountant', 'Legal Team Lead', 'Lawyer'];
+let selectRoles = [];
 let selectEmployee = [];
 
 // inquirer questions
@@ -27,22 +27,22 @@ const addDepartmentQuestion = [
 ];
 
 const addRoleQuestions = [
-    {
-        type: 'input',
-        name: 'role_name',
-        message: 'What is the name of the role?'
-    },
-    {
-        type: 'input',
-        name: 'salary',
-        message: 'What is the salary of the role?',
-        validate(input) {
-            if (/^\d+$/g.test(input)) {
-                return true;
-            }
-            throw Error('Please enter numbers only.');
-        },
-    },
+    // {
+    //     type: 'input',
+    //     name: 'role_name',
+    //     message: 'What is the name of the role?'
+    // },
+    // {
+    //     type: 'input',
+    //     name: 'salary',
+    //     message: 'What is the salary of the role?',
+    //     validate(input) {
+    //         if (/^\d+$/g.test(input)) {
+    //             return true;
+    //         }
+    //         throw Error('Please enter numbers only.');
+    //     },
+    // },
     {
         type: 'list',
         name: 'role_dept',
@@ -106,10 +106,31 @@ const updateRoleQuestions = [
 // start here
 const init = () => {
     // get db fields populate arrays
-    getViews('department');
-    getViews('role');
-    getViews('employee');
-    menu();
+    let promise1 = new Promise((res, rej) => {
+        if(err) rej(err);
+
+        res(getViews('department'));
+    });
+
+    let promise2 = new Promise((res, rej) => {
+        if(err) rej(err);
+
+        res(getViews('role'));
+    });
+
+    let promise3 = new Promise((res, rej) => {
+        if(err) rej(err);
+
+        res(getViews('employee'));
+    });
+
+    let promise4 = new Promise((res, rej) => {
+        if(err) rej(err);
+
+        res(menu());
+    });
+
+    Promise.all([promise1, promise2, promise3, promise4])
 };
 
 const menu = () => {
@@ -151,8 +172,15 @@ const menu = () => {
 }
 
 const getViews = (table, display, timeout) => {
+    let deptQuery = `SELECT * FROM ${table}`;
+    let roleQuery = `SELECT r.id, r.title AS role, r.salary, d.id, d.dept_name AS department FROM role r INNER JOIN department d USING(dept_name)`;
+    let employeeQuery = ``;
+
+    let myQuery = (table === 'department') ? deptQuery : (table === 'role') ? roleQuery : employeeQuery;
+    console.log(myQuery);
+
     // myDb class, queryDb method
-    myDb.queryDb(`SELECT * FROM ${table}`)
+    myDb.queryDb(myQuery)
         .then(results => { 
             // only show table when desired
             if (display) console.table(results); 
@@ -234,11 +262,9 @@ const addRole = () => {
                             .catch(err => { throw err })
                             //.then(() => { myDb.end });
                     }
-                })
-            //connect.addRole(answers.role_name, answers.salary, answers.role_dept);
-            //console.log(answers.role_dept);            
-            .catch(err => { throw err })            
-            .then(() => { getViews('role', false, true) });
+                })        
+            .then(() => { getViews('role', false, true) })
+            .catch(err => { throw err });
         });   
 };
 
