@@ -3,6 +3,7 @@ const myDbConfig = require('./utils/connection');
 
 // get class
 const dbQuery = require('./lib/query');
+const dbViews = require('./lib/query-view');
 
 // wire db connection to query class
 let myDb = new dbQuery(myDbConfig);
@@ -27,22 +28,22 @@ const addDepartmentQuestion = [
 ];
 
 const addRoleQuestions = [
-    // {
-    //     type: 'input',
-    //     name: 'role_name',
-    //     message: 'What is the name of the role?'
-    // },
-    // {
-    //     type: 'input',
-    //     name: 'salary',
-    //     message: 'What is the salary of the role?',
-    //     validate(input) {
-    //         if (/^\d+$/g.test(input)) {
-    //             return true;
-    //         }
-    //         throw Error('Please enter numbers only.');
-    //     },
-    // },
+    {
+        type: 'input',
+        name: 'role_name',
+        message: 'What is the name of the role?'
+    },
+    {
+        type: 'input',
+        name: 'salary',
+        message: 'What is the salary of the role?',
+        validate(input) {
+            if (/^\d+$/g.test(input)) {
+                return true;
+            }
+            throw Error('Please enter numbers only.');
+        },
+    },
     {
         type: 'list',
         name: 'role_dept',
@@ -106,31 +107,11 @@ const updateRoleQuestions = [
 // start here
 const init = () => {
     // get db fields populate arrays
-    let promise1 = new Promise((res, rej) => {
-        if(err) rej(err);
+        getDept();
+        getRole();
+        getEmployee();
 
-        res(getViews('department'));
-    });
-
-    let promise2 = new Promise((res, rej) => {
-        if(err) rej(err);
-
-        res(getViews('role'));
-    });
-
-    let promise3 = new Promise((res, rej) => {
-        if(err) rej(err);
-
-        res(getViews('employee'));
-    });
-
-    let promise4 = new Promise((res, rej) => {
-        if(err) rej(err);
-
-        res(menu());
-    });
-
-    Promise.all([promise1, promise2, promise3, promise4])
+        menu();
 };
 
 const menu = () => {
@@ -144,13 +125,13 @@ const menu = () => {
 
         switch(answer.start) {
             case 'View All Departments':
-                getViews('department', true, true);
+                getDept(true, true);
                 break;
             case 'View All Roles':
-                getViews('role', true, true);
+                getRole(true, true);
                 break;
             case 'View All Employees':
-                getViews('employee', true, true);
+                getEmployee(true, true);
                 break;
             case 'Add a Department':
                 addDepartment();
@@ -171,49 +152,70 @@ const menu = () => {
     });
 }
 
-const getViews = (table, display, timeout) => {
-    let deptQuery = `SELECT * FROM ${table}`;
-    let roleQuery = `SELECT r.id, r.title AS role, r.salary, d.id, d.dept_name AS department FROM role r INNER JOIN department d USING(dept_name)`;
-    let employeeQuery = ``;
-
-    let myQuery = (table === 'department') ? deptQuery : (table === 'role') ? roleQuery : employeeQuery;
-    console.log(myQuery);
-
+const getDept = (display, timeout) => {
     // myDb class, queryDb method
-    myDb.queryDb(myQuery)
+    let query = myDb.queryDb(`SELECT d.id, d.dept_name AS department FROM department d ORDER BY d.id ASC`)
         .then(results => { 
             // only show table when desired
-            if (display) console.table(results); 
+            if (display) { console.log('\n'); console.table(results); }
+
+            // populate arrays     
+            selectDepts = []; // clear array before push to avoid duplicate entries
+            results.forEach((i) => {
+                //console.log(i.dept_name);
+                selectDepts.push(i.dept_name);
+
+                return selectDepts;
+            });
+            //console.log(selectDepts);
+        })
+        .catch(err => { throw err });
+        //.then(() => { myDb.end() });
+    
+    if (timeout) setTimeout(() => {menu()}, 1000);
+
+        console.log(query);
+}
+
+const getRole = (display, timeout) => {
+    // myDb class, queryDb method
+    myDb.queryDb(`SELECT r.id, r.title, d.dept_name AS department, r.salary FROM role r INNER JOIN department d ON r.department_id = d.id ORDER BY r.id ASC`)
+        .then(results => { 
+            // only show table when desired
+            if (display) { console.log('\n'); console.table(results); } 
 
             // populate arrays
-            switch(table) {
-                case 'department':
-                    selectDepts = []; // clear array before push to avoid duplicate entries
-                    results.forEach((i) => {
-                        //console.log(i.dept_name);
-                        selectDepts.push(i.dept_name);
-                    });
-                    //console.log(selectDepts);
-                    break;
-                case 'role':
-                    selectRoles = [];
-                    results.forEach((i) => {
-                        //console.log(i);
-                        selectRoles.push(i.title);
-                    });
-                    //console.log(selectRoles);
-                    break;
-                case 'employee':
-                    selectEmployee = [];
-                    results.forEach((i) => {
-                        //console.log(`${i.last_name}, ${i.first_name}`);
-                        let employeeName = `${i.last_name}, ${i.first_name}`
-                        selectEmployee.push(employeeName);
-                    });
-                    //console.log(selectEmployee);
-                    break;
-            } 
+            selectRoles = [];
+            results.forEach((i) => {
+                //console.log(i);
+                selectRoles.push(i.title);
+            });
+            //console.log(selectRoles);
+        })
+        .catch(err => { throw err });
+        //.then(() => { myDb.end() });
 
+    if (timeout) setTimeout(() => {menu()}, 1000);
+}
+
+const getEmployee = (display, timeout) => {
+    let employeeQuery = `SELECT e.id, e.first_name, e.last_name, r.title, d.dept_name AS department, r.salary, CONCAT(m.first_name, ' ', m.last_name) AS manager 
+    FROM employee e INNER JOIN role r ON e.role_id = r.id INNER JOIN department d ON r.department_id = d.id LEFT JOIN employee m ON e.manager_id = m.id ORDER BY e.last_name ASC`;
+
+    // myDb class, queryDb method
+    myDb.queryDb(employeeQuery)
+        .then(results => { 
+            // only show table when desired
+            if (display) { console.log('\n'); console.table(results); } 
+
+            // populate arrays
+            selectEmployee = [];
+            results.forEach((i) => {
+                //console.log(`${i.last_name}, ${i.first_name}`);
+                let employeeName = `${i.last_name}, ${i.first_name}`
+                selectEmployee.push(employeeName);
+            });
+            //console.log(selectEmployee);
         })
         .catch(err => { throw err });
         //.then(() => { myDb.end() });
@@ -241,11 +243,12 @@ const addDepartment = () => {
                 }
             })
             .catch(err => { throw err })            
-            .then(() => { getViews('department', false, true) });
+            .then(() => { getDept() });
         });   
 };
 
 const addRole = () => {
+    console.log(selectDepts);
     inquirer
         .prompt(addRoleQuestions)
         .then(answers => {
@@ -263,9 +266,10 @@ const addRole = () => {
                             //.then(() => { myDb.end });
                     }
                 })        
-            .then(() => { getViews('role', false, true) })
+            .then(() => { getRole() })
             .catch(err => { throw err });
         });   
+        
 };
 
 const addEmployee = () => {
