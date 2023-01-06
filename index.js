@@ -31,7 +31,7 @@ const addDepartmentQuestion = [
 const addRoleQuestions = [
     {
         type: 'input',
-        name: 'role_name',
+        name: 'title',
         message: 'What is the name of the role?'
     },
     {
@@ -80,13 +80,13 @@ const addEmployeeQuesions = [
         type: 'list',
         name: 'role',
         message: 'What is the employee\'s role?',
-        choices: selectRoles,
+        choices: roleList,
     },
     {
         type: 'list',
         name: 'manager',
         message: 'Who is the employee\'s manager?',
-        choices: selectEmployee,
+        choices: employeeList,
     }
 ];
 
@@ -225,6 +225,7 @@ const addDepartment = () => {
 };
 
 const addRole = () => {
+    let departmentId;
 
     //populate array
     selectDepts.forEach((i) => {
@@ -234,18 +235,24 @@ const addRole = () => {
     inquirer
         .prompt(addRoleQuestions)
         .then(answers => {
+            // get department id
+            myDb.queryDb(`SELECT id FROM department WHERE dept_name = '${answers.role_dept}'`)
+                .then(results => {
+                    departmentId = results[0].id;
+                })
+                .catch(err => { throw err });
+
             // check if role name already exist
-            myDb.queryDb(`SELECT title FROM role WHERE EXISTS (SELECT * FROM role WHERE title = '${answers.role_name}')`)
+            myDb.queryDb(`SELECT title FROM role WHERE EXISTS (SELECT * FROM role WHERE title = '${answers.title}')`)
                 .then(results => {
                     if (results.length > 0) {
                         console.log('\n Role already exist in database. \n');
                     } else { 
-                        myDb.queryDb(`INSERT INTO role(title) VALUES ('${title}, ${salary}, ')`)
+                        myDb.queryDb(`INSERT INTO role(title, salary, department_id) VALUES ('${answers.title}', ${answers.salary}, ${departmentId})`)
                             .then(() => {
-                                console.log(`\n ${answers.role_name} was successfully added to Roles. \n`);
+                                console.log(`\n ${answers.title} was successfully added to Roles. \n`);
                             })
-                            .catch(err => { throw err })
-                            //.then(() => { myDb.end });
+                            .catch(err => { throw err });
                     }
                 })        
             .then(() => { init() })
@@ -254,37 +261,64 @@ const addRole = () => {
 };
 
 const addEmployee = () => {
-    console.log(selectRoles);
-    console.log(selectEmployee);
+    let tempList = [], roleId, managerId;
     
     //populate arrays
-    // selectRoles.forEach((i) => {
-    //     roleList.push(i.title);               
-    // });
+    selectRoles.forEach((i) => {
+        roleList.push(i.title);               
+    });
 
     selectEmployee.forEach((i) => {
-           let obj = {id: i.id}, {name: i.manager};
-    //     employeeList.push(manager);               
+        tempList.push(i.manager);               
+    });
+
+    // remove null values from array
+    let managerArr = tempList.filter((item) => item !== null); // [ 'Kayla Brown', 'Kristen Lee' ]
+    let temp = [];
+    managerArr.forEach((i) => {
+        let temp2 = i.split(' ');
+        console.log('temp: ' + temp2)
+        let name = {first_name: temp2[0], last_name: temp2[1]};
+        console.log(name);
+
+        temp.push(name); // LEAVE THIS ALONE!!! { first_name: 'Kristen', last_name: 'Lee' }
+
+
     });
 
     inquirer
         .prompt(addEmployeeQuesions)
         .then(answers => {
-            // check if employee already exist
-            myDb.queryDb(`INSERT INTO employee (id, first_name, last_name, role_id, manager_id) VALUES ('NULL', ${this.fname}, ${this.lname}, ${this.role}, ${this.manager})`)
+            console.log(answers);
+            // get role id
+            myDb.queryDb(`SELECT id FROM role WHERE title = '${answers.role}'`)
                 .then(results => {
-                    if (results.length > 0) {
-                        console.log('\n Role already exist in database. \n');
-                    } else { 
-                        myDb.queryDb(`INSERT INTO employee(title) VALUES ('${title}, ${salary}, ')`)
-                            .then(() => {
-                                console.log(`\n ${answers.role_name} was successfully added to Roles. \n`);
-                            })
-                            .catch(err => { throw err });
-                    }
-                })        
-            .then(() => { init() })
-            .catch(err => { throw err });
+                    roleId = results[0].id;
+                })
+                .catch(err => { throw err });
+
+            // get manager id
+            myDb.queryDb(`SELECT id FROM employee WHERE  = '${answers.id}'`)
+                .then(results => {
+                    managerId = results[0].id;
+                })
+                .catch(err => { throw err });
+
+            // check if employee already exist
+            // myDb.queryDb(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answers.fname}', '${answers.lname}', ${}, ${})`)
+            //     .then(results => {
+            //         if (results.length > 0) {
+            //             console.log('\n Role already exist in database. \n');
+            //         } else { 
+            //             myDb.queryDb(`INSERT INTO employee(title) VALUES ('${title}, ${salary}, ')`) //INSERT INTO employee (id, first_name, last_name, role_id) VALUES ()
+            //                 .then(() => {
+            //                     console.log(`\n ${answers.role_name} was successfully added to Roles. \n`);
+            //                 })
+            //                 .catch(err => { throw err });
+            //         }
+            //     })        
+            // .then(() => { init() })
+            // .catch(err => { throw err });
         });   
 };
 
