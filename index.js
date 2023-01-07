@@ -112,7 +112,8 @@ const init = async () => {
     await getRole();
     await getEmployee();
 
-    menu();
+    //menu();
+    addEmployee();
 };
 
 const menu = () => {
@@ -260,36 +261,40 @@ const addRole = () => {
         });           
 };
 
+
+// Tori, add 'None' to Employee List for Managers
+// Line 321 returns error of undefined (not found in db)
+
+// console.log('name: ' + name);            
+
+// console.log('temp: ' + temp);
+
+// console.log(fname, lname);
+
+// name: Renee Aguirre
+// temp: Renee,Aguirre
+// undefined undefined
+// [] Line 332 results
+
 const addEmployee = () => {
-    let tempList = [], roleId, managerId;
+
+    let roleId, employeeName, managerId;
     
-    //populate arrays
+    // populate arrays
     selectRoles.forEach((i) => {
         roleList.push(i.title);               
     });
 
+    // concat first and last names to build employeeList
     selectEmployee.forEach((i) => {
-        tempList.push(i.manager);               
-    });
-
-    // remove null values from array
-    let managerArr = tempList.filter((item) => item !== null); // [ 'Kayla Brown', 'Kristen Lee' ]
-    let temp = [];
-    managerArr.forEach((i) => {
-        let temp2 = i.split(' ');
-        console.log('temp: ' + temp2)
-        let name = {first_name: temp2[0], last_name: temp2[1]};
-        console.log(name);
-
-        temp.push(name); // LEAVE THIS ALONE!!! { first_name: 'Kristen', last_name: 'Lee' }
-
-
-    });
+        employeeName = `${i.first_name} ${i.last_name}`;
+        employeeList.push(employeeName);               
+    });    
 
     inquirer
         .prompt(addEmployeeQuesions)
         .then(answers => {
-            console.log(answers);
+
             // get role id
             myDb.queryDb(`SELECT id FROM role WHERE title = '${answers.role}'`)
                 .then(results => {
@@ -297,22 +302,35 @@ const addEmployee = () => {
                 })
                 .catch(err => { throw err });
 
+            // separate employee name for db query
+            let name = answers.manager;
+            console.log('name: ' + name);
+            
+            let temp = name.split(' ');
+            console.log('temp: ' + temp);
+            
+            let fname = temp[0].first_name;
+            let lname = temp[1].last_name;
+
+            console.log(fname, lname);
+
             // get manager id
-            myDb.queryDb(`SELECT id FROM employee WHERE  = '${answers.id}'`)
+            myDb.queryDb(`SELECT id FROM employee WHERE first_name = '${fname}' AND last_name = '${lname}'`)
                 .then(results => {
+                    console.log(results);
                     managerId = results[0].id;
                 })
                 .catch(err => { throw err });
 
-            // check if employee already exist
-            // myDb.queryDb(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answers.fname}', '${answers.lname}', ${}, ${})`)
+            //check if employee already exist
+            // myDb.queryDb(`SELECT id FROM employee WHERE EXISTS (SELECT * FROM employee WHERE first_name = '${fname}' AND last_name = '${lname}')`)
             //     .then(results => {
             //         if (results.length > 0) {
-            //             console.log('\n Role already exist in database. \n');
+            //             console.log('\n Employee already exist in database. \n');
             //         } else { 
-            //             myDb.queryDb(`INSERT INTO employee(title) VALUES ('${title}, ${salary}, ')`) //INSERT INTO employee (id, first_name, last_name, role_id) VALUES ()
+            //             myDb.queryDb(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answers.fname}', '${answers.lname}', ${roleId}, ${managerId})`)
             //                 .then(() => {
-            //                     console.log(`\n ${answers.role_name} was successfully added to Roles. \n`);
+            //                     console.log(`\n ${name} was successfully added to Employees. \n`);
             //                 })
             //                 .catch(err => { throw err });
             //         }
