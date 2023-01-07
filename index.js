@@ -14,9 +14,11 @@ const cTable = require('console.table');
 
 // inquirer choices
 const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role', 'Exit'];
-let selectDepts = [];
-let selectRoles = [];
-let selectEmployee = [];
+let selectDepts, selectRoles, selectEmployee;
+let deptList = [];
+let roleList = [];
+let employeeList = [];
+let managerList = [];
 
 // inquirer questions
 const addDepartmentQuestion = [
@@ -30,7 +32,7 @@ const addDepartmentQuestion = [
 const addRoleQuestions = [
     {
         type: 'input',
-        name: 'role_name',
+        name: 'title',
         message: 'What is the name of the role?'
     },
     {
@@ -48,7 +50,7 @@ const addRoleQuestions = [
         type: 'list',
         name: 'role_dept',
         message: 'Which department does the role belong to?',
-        choices: selectDepts,
+        choices: deptList,
     }
 ];
 
@@ -79,13 +81,13 @@ const addEmployeeQuesions = [
         type: 'list',
         name: 'role',
         message: 'What is the employee\'s role?',
-        choices: selectRoles,
+        choices: roleList,
     },
     {
         type: 'list',
         name: 'manager',
         message: 'Who is the employee\'s manager?',
-        choices: selectEmployee,
+        choices: employeeList,
     }
 ];
 
@@ -94,24 +96,30 @@ const updateRoleQuestions = [
         type: 'list',
         name: 'employee',
         message: 'Which employee\'s role do you want to update?',
-        choices: selectEmployee,
+        choices: employeeList,
     },
     {
         type: 'list',
         name: 'new_role',
         message: 'Which role do you want to assign the selected employee?',
-        choices: selectRoles,
+        choices: roleList,
+    },
+    {
+        type: 'list',
+        name: 'manager',
+        message: 'Who is the employee\'s manager?',
+        choices: managerList,
     }
 ];
 
 // start here
-const init = () => {
+const init = async () => {
     // get db fields populate arrays
-        getDept();
-        getRole();
-        getEmployee();
+    await getDept();
+    await getRole();
+    await getEmployee();
 
-        menu();
+    menu();
 };
 
 const menu = () => {
@@ -152,75 +160,52 @@ const menu = () => {
     });
 }
 
-const getDept = (display, timeout) => {
+const getDept = (display, timeout) => {      
+    
+    if (timeout) setTimeout(() => {menu()}, 1000);
+
     // myDb class, queryDb method
-    let query = myDb.queryDb(`SELECT d.id, d.dept_name AS department FROM department d ORDER BY d.id ASC`)
+    return myDb.queryDb(`SELECT d.id, d.dept_name AS department FROM department d ORDER BY d.id ASC`)
         .then(results => { 
             // only show table when desired
             if (display) { console.log('\n'); console.table(results); }
 
-            // populate arrays     
-            selectDepts = []; // clear array before push to avoid duplicate entries
-            results.forEach((i) => {
-                //console.log(i.dept_name);
-                selectDepts.push(i.dept_name);
-
-                return selectDepts;
-            });
-            //console.log(selectDepts);
+            selectDepts = results;
         })
-        .catch(err => { throw err });
-        //.then(() => { myDb.end() });
-    
-    if (timeout) setTimeout(() => {menu()}, 1000);
-
-        console.log(query);
+        .catch(err => { throw err });      
 }
 
 const getRole = (display, timeout) => {
-    // myDb class, queryDb method
-    myDb.queryDb(`SELECT r.id, r.title, d.dept_name AS department, r.salary FROM role r INNER JOIN department d ON r.department_id = d.id ORDER BY r.id ASC`)
+
+    if (timeout) setTimeout(() => {menu()}, 1000);
+
+    return myDb.queryDb(`SELECT r.id, r.title, d.dept_name AS department, r.salary FROM role r INNER JOIN department d ON r.department_id = d.id ORDER BY r.id ASC`)
         .then(results => { 
             // only show table when desired
             if (display) { console.log('\n'); console.table(results); } 
 
-            // populate arrays
-            selectRoles = [];
-            results.forEach((i) => {
-                //console.log(i);
-                selectRoles.push(i.title);
-            });
-            //console.log(selectRoles);
+            selectRoles = results;
         })
         .catch(err => { throw err });
-        //.then(() => { myDb.end() });
-
-    if (timeout) setTimeout(() => {menu()}, 1000);
 }
 
 const getEmployee = (display, timeout) => {
+
+    if (timeout) setTimeout(() => {menu()}, 1000);
+
     let employeeQuery = `SELECT e.id, e.first_name, e.last_name, r.title, d.dept_name AS department, r.salary, CONCAT(m.first_name, ' ', m.last_name) AS manager 
     FROM employee e INNER JOIN role r ON e.role_id = r.id INNER JOIN department d ON r.department_id = d.id LEFT JOIN employee m ON e.manager_id = m.id ORDER BY e.last_name ASC`;
 
     // myDb class, queryDb method
-    myDb.queryDb(employeeQuery)
+    return myDb.queryDb(employeeQuery)
         .then(results => { 
             // only show table when desired
             if (display) { console.log('\n'); console.table(results); } 
 
             // populate arrays
-            selectEmployee = [];
-            results.forEach((i) => {
-                //console.log(`${i.last_name}, ${i.first_name}`);
-                let employeeName = `${i.last_name}, ${i.first_name}`
-                selectEmployee.push(employeeName);
-            });
-            //console.log(selectEmployee);
+            selectEmployee = results;
         })
         .catch(err => { throw err });
-        //.then(() => { myDb.end() });
-
-    if (timeout) setTimeout(() => {menu()}, 1000);
 }
 
 const addDepartment = () => {
@@ -239,60 +224,184 @@ const addDepartment = () => {
                             console.log(`\n ${answer.dept_name} was successfully added to Departments. \n`);
                         })
                         .catch(err => { throw err })
-                        //.then(() => { myDb.end });
                 }
-            })
-            .catch(err => { throw err })            
-            .then(() => { getDept() });
+            })           
+            .then(() => { getDept() })
+            .catch(err => { throw err });
         });   
 };
 
 const addRole = () => {
-    console.log(selectDepts);
+    let departmentId;
+
+    //populate array
+    selectDepts.forEach((i) => {
+        deptList.push(i.department);               
+    });
+    
     inquirer
         .prompt(addRoleQuestions)
         .then(answers => {
+            // get department id
+            myDb.queryDb(`SELECT id FROM department WHERE (dept_name = '${answers.role_dept}')`)
+                .then(results => {
+                    departmentId = results[0].id;
+                })
+                .catch(err => { throw err });
+
             // check if role name already exist
-            myDb.queryDb(`SELECT title FROM role WHERE EXISTS (SELECT * FROM role WHERE title = '${answers.role_name}')`)
+            myDb.queryDb(`SELECT title FROM role WHERE EXISTS (SELECT * FROM role WHERE (title = '${answers.title}'))`)
                 .then(results => {
                     if (results.length > 0) {
                         console.log('\n Role already exist in database. \n');
                     } else { 
-                        myDb.queryDb(`INSERT INTO role(title) VALUES ('${title}, ${salary}, ')`)
+                        myDb.queryDb(`INSERT INTO role(title, salary, department_id) VALUES ('${answers.title}', ${answers.salary}, ${departmentId})`)
                             .then(() => {
-                                console.log(`\n ${answers.role_name} was successfully added to Roles. \n`);
+                                console.log(`\n ${answers.title} was successfully added to Roles. \n`);
                             })
-                            .catch(err => { throw err })
-                            //.then(() => { myDb.end });
+                            .catch(err => { throw err });
                     }
                 })        
-            .then(() => { getRole() })
+            .then(() => { init() })
             .catch(err => { throw err });
-        });   
-        
+        });           
 };
 
 const addEmployee = () => {
+
+    let roleId, employeeName, managerId, first_name, last_name;
+    
+    // populate arrays
+    selectRoles.forEach((i) => {
+        roleList.push(i.title);               
+    });
+
+    // concat first and last names to build employeeList
+    selectEmployee.forEach((i) => {
+        employeeName = `${i.first_name} ${i.last_name}`;
+        employeeList.push(employeeName);    
+    });       
+
+    employeeList.push('None');
+
     inquirer
         .prompt(addEmployeeQuesions)
-        .then(answers => {
-            // check if employee already exist
+        .then(async (answers) => {
 
-        });
-        // connect = new dbQuery('INSERT INTO employee (id, first_name, last_name, role_id, manager_id) VALUES ('NULL', ${this.fname}, ${this.lname}, ${this.role}, ${this.manager});');
-        // connect.addEmployee();
-        // function
+            //get role id
+            await myDb.queryDb(`SELECT id FROM role WHERE (title = '${answers.role}')`)
+                .then(results => {
+                    roleId = results[0].id;
+                })
+                .catch(err => { throw err });
+
+            if (answers.manager !== 'None') {
+                // separate employee name for db query
+                let name = [answers.manager];
+
+                let temp = name[0].split(' '); 
+                
+                first_name = temp[0];
+                last_name = temp[1];                
+
+                // get manager id
+                myDb.queryDb(`SELECT id FROM employee WHERE (first_name = '${first_name}' AND last_name = '${last_name}')`)
+                    .then(results => {
+                        managerId = results[0].id;
+                    })
+                    .catch(err => { throw err });
+            } else {
+                managerId = '';
+            }
+
+            // check if employee already exist
+            myDb.queryDb(`SELECT id FROM employee WHERE EXISTS (SELECT * FROM employee WHERE (first_name = '${answers.fname}' AND last_name = '${answers.lname}'))`)
+                .then(results => {
+                    if (results.length > 0) {
+                        console.log('\n Employee already exist in database. \n');
+                    } else { 
+                        myDb.queryDb(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answers.fname}', '${answers.lname}', ${roleId}, ${managerId})`)
+                            .then(() => {
+                                console.log(`\n ${answers.fname} ${answers.lname} was successfully added to Employees. \n`);
+                            })
+                            .catch(err => { throw err });
+                    }
+                })        
+            .then(() => { init() })
+            .catch(err => { throw err });
+        });   
 };
 
 const updateEmployee = () => {
+
+    let employeeName, employeeId, roleId, managerId, first_name, last_name;
+
+    // concat first and last names to build employeeList
+    selectEmployee.forEach((i) => {
+        employeeName = `${i.first_name} ${i.last_name}`;
+        employeeList.push(employeeName);    
+    });
+
+    // add none to employee list
+    managerList = [...employeeList, 'None']; // this works, just doesn't get to inquirer prompt like the other two
+
+    // fill role list
+    selectRoles.forEach((i) => {
+        roleList.push(i.title);               
+    });
+
     inquirer
         .prompt(updateRoleQuestions)
-        .then(answers => {
+        .then(async (answers) => {
+            console.log(answers);
+            // get id of name that matches
+            let name = [answers.employee];
+            let temp = name[0].split(' '); 
+                
+            first_name = temp[0];
+            last_name = temp[1];
 
+            // get employee id
+            await myDb.queryDb(`SELECT id FROM employee WHERE (first_name = '${first_name}' AND last_name = '${last_name}')`)
+                .then(results => {
+                    employeeId = results[0].id;
+                })
+                .catch(err => { throw err });
+
+            // get id of new role
+            await myDb.queryDb(`SELECT id FROM role WHERE (title = '${answers.new_role}')`)
+                .then(results => {
+                    roleId = results[0].id;
+                })
+                .catch(err => { throw err });
+            
+            if (answers.manager !== 'None') {
+                // separate employee name for db query
+                let name = [answers.manager];
+
+                let temp = name[0].split(' '); 
+                
+                first_name = temp[0];
+                last_name = temp[1];                
+
+                // get manager id
+                myDb.queryDb(`SELECT id FROM employee WHERE (first_name = '${first_name}' AND last_name = '${last_name}')`)
+                    .then(results => {
+                        managerId = results[0].id;
+                    })
+                    .catch(err => { throw err });
+            } else {
+                managerId = '';
+            }
+            
+            // update role for employee
+            myDb.queryDb(`UPDATE employee SET role_id = ${roleId}, manager_id = ${managerId} WHERE (id = ${employeeId})`)
+                .then(() => {
+                    console.log(`\n ${answers.fname} ${answers.lname} job title was successfully updated to ${answers.new_role}. \n`);
+                })      
+                .then(() => { init() })
+                .catch(err => { throw err });
         });
-    // connect = new dbQuery('UPDATE employee SET address = 'Canyon 123' WHERE address = 'Valley 345'');
-    // connect.updateEmployee();
-    // function 
 };
 
 init();
