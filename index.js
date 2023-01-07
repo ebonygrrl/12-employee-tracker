@@ -112,8 +112,8 @@ const init = async () => {
     await getRole();
     await getEmployee();
 
-    //menu();
-    addEmployee();
+    menu();
+    //addEmployee();
 };
 
 const menu = () => {
@@ -261,24 +261,9 @@ const addRole = () => {
         });           
 };
 
-
-// Tori, add 'None' to Employee List for Managers
-// Line 321 returns error of undefined (not found in db)
-
-// console.log('name: ' + name);            
-
-// console.log('temp: ' + temp);
-
-// console.log(fname, lname);
-
-// name: Renee Aguirre
-// temp: Renee,Aguirre
-// undefined undefined
-// [] Line 332 results
-
 const addEmployee = () => {
 
-    let roleId, employeeName, managerId;
+    let roleId, employeeName, managerId, first_name, last_name;
     
     // populate arrays
     selectRoles.forEach((i) => {
@@ -288,55 +273,56 @@ const addEmployee = () => {
     // concat first and last names to build employeeList
     selectEmployee.forEach((i) => {
         employeeName = `${i.first_name} ${i.last_name}`;
-        employeeList.push(employeeName);               
-    });    
+        employeeList.push(employeeName);    
+    });       
+
+    employeeList.push('None');
 
     inquirer
         .prompt(addEmployeeQuesions)
         .then(answers => {
 
-            // get role id
+            //get role id
             myDb.queryDb(`SELECT id FROM role WHERE title = '${answers.role}'`)
                 .then(results => {
                     roleId = results[0].id;
                 })
                 .catch(err => { throw err });
 
-            // separate employee name for db query
-            let name = answers.manager;
-            console.log('name: ' + name);
-            
-            let temp = name.split(' ');
-            console.log('temp: ' + temp);
-            
-            let fname = temp[0].first_name;
-            let lname = temp[1].last_name;
+            if (answers.manager !== 'None') {
+                // separate employee name for db query
+                let name = [answers.manager];
 
-            console.log(fname, lname);
+                let temp = name[0].split(' '); 
+                
+                first_name = temp[0];
+                last_name = temp[1];                
 
-            // get manager id
-            myDb.queryDb(`SELECT id FROM employee WHERE first_name = '${fname}' AND last_name = '${lname}'`)
+                // get manager id
+                myDb.queryDb(`SELECT id FROM employee WHERE first_name = '${first_name}' AND last_name = '${last_name}'`)
+                    .then(results => {
+                        managerId = results[0].id;
+                    })
+                    .catch(err => { throw err });
+            } else {
+                managerId = 'NULL';
+            }
+
+            // check if employee already exist
+            myDb.queryDb(`SELECT id FROM employee WHERE EXISTS (SELECT * FROM employee WHERE first_name = '${answers.fname}' AND last_name = '${answers.lname}')`)
                 .then(results => {
-                    console.log(results);
-                    managerId = results[0].id;
-                })
-                .catch(err => { throw err });
-
-            //check if employee already exist
-            // myDb.queryDb(`SELECT id FROM employee WHERE EXISTS (SELECT * FROM employee WHERE first_name = '${fname}' AND last_name = '${lname}')`)
-            //     .then(results => {
-            //         if (results.length > 0) {
-            //             console.log('\n Employee already exist in database. \n');
-            //         } else { 
-            //             myDb.queryDb(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answers.fname}', '${answers.lname}', ${roleId}, ${managerId})`)
-            //                 .then(() => {
-            //                     console.log(`\n ${name} was successfully added to Employees. \n`);
-            //                 })
-            //                 .catch(err => { throw err });
-            //         }
-            //     })        
-            // .then(() => { init() })
-            // .catch(err => { throw err });
+                    if (results.length > 0) {
+                        console.log('\n Employee already exist in database. \n');
+                    } else { 
+                        myDb.queryDb(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answers.fname}', '${answers.lname}', ${roleId}, ${managerId})`)
+                            .then(() => {
+                                console.log(`\n ${answers.fname} ${answers.lname} was successfully added to Employees. \n`);
+                            })
+                            .catch(err => { throw err });
+                    }
+                })        
+            .then(() => { init() })
+            .catch(err => { throw err });
         });   
 };
 
