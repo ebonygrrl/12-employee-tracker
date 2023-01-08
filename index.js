@@ -13,104 +13,12 @@ const inquirer = require('inquirer');
 const cTable = require('console.table');
 
 // inquirer choices
-const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role', 'Exit'];
-let selectDepts, selectRoles, selectEmployee;
+const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'View All Managers', 'View Employees by Department', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role', 'Exit'];
+let selectDepts, selectRoles, selectEmployee, selectManager;
 let deptList = [];
 let roleList = [];
 let employeeList = [];
 let managerList = [];
-
-// inquirer questions
-const addDepartmentQuestion = [
-    {
-        type: 'input',
-        name: 'dept_name',
-        message: 'What is the name of the department?'
-    }
-];
-
-const addRoleQuestions = [
-    {
-        type: 'input',
-        name: 'title',
-        message: 'What is the name of the role?'
-    },
-    {
-        type: 'input',
-        name: 'salary',
-        message: 'What is the salary of the role?',
-        validate(input) {
-            if (/^\d+$/g.test(input)) {
-                return true;
-            }
-            throw Error('Please enter numbers only.');
-        },
-    },
-    {
-        type: 'list',
-        name: 'role_dept',
-        message: 'Which department does the role belong to?',
-        choices: deptList,
-    }
-];
-
-const addEmployeeQuesions = [
-    {
-        type: 'input',
-        name: 'fname',
-        message: 'What is the employee\'s first name?',
-        validate(input) {
-             if (/^[A-Z][a-z]+$/g.test(input)) {
-                 return true;
-             }
-             throw Error('Please be sure name is capitalized and enter first name only.');
-        },
-    },
-    {
-        type: 'input',
-        name: 'lname',
-        message: 'What is the employee\'s last name?',
-        validate(input) {
-             if (/^[A-Z][a-z]+$/g.test(input)) {
-                 return true;
-             }
-             throw Error('Please be sure name is capitalized and enter last name only.');
-        },
-    },
-    {
-        type: 'list',
-        name: 'role',
-        message: 'What is the employee\'s role?',
-        choices: roleList,
-    },
-    {
-        type: 'list',
-        name: 'manager',
-        message: 'Who is the employee\'s manager?',
-        choices: employeeList,
-    }
-];
-
-const updateRoleQuestions = [
-    {
-        type: 'list',
-        name: 'employee',
-        message: 'Which employee\'s role do you want to update?',
-        choices: employeeList,
-    },
-    {
-        type: 'list',
-        name: 'new_role',
-        message: 'Which role do you want to assign the selected employee?',
-        choices: roleList,
-    },
-    {
-        type: 'list',
-        name: 'manager',
-        message: 'Who is the employee\'s manager?',
-        choices: managerList,
-    }
-];
 
 // start here
 const init = async () => {
@@ -140,6 +48,12 @@ const menu = () => {
                 break;
             case 'View All Employees':
                 getEmployee(true, true);
+                break;
+            case 'View All Managers':
+                getManagers(true, true);
+                break;
+            case 'View Employees by Department':
+                getEmployeesByDept();
                 break;
             case 'Add a Department':
                 addDepartment();
@@ -208,9 +122,122 @@ const getEmployee = (display, timeout) => {
         .catch(err => { throw err });
 }
 
-const addDepartment = () => {
+const getManagers = async () => {
+    
+    let employeeName, managerId, first_name, last_name;
+
+    // run query to get employees listed as managers to populate list
+    await myDb.queryDb(`SELECT * FROM employee WHERE (id IN (SELECT manager_id FROM employee))`)
+            .then(results => {
+                selectManager = results;
+            })
+            .catch(err => { throw err });
+
+    // concat first and last names to build managerList
+    selectManager.forEach((i) => {
+        employeeName = `${i.first_name} ${i.last_name}`;
+        managerList.push(employeeName);    
+    });
+
+    await inquirer
+        .prompt([
+            {
+                type: 'list',
+                name: 'manager',
+                message: 'Which manager\'s team would you like view?',
+                choices: managerList,
+            }
+        ])
+        .then(async (answer) => {
+            // get id of name that matches
+            let name = [answer.manager];
+            let temp = name[0].split(' '); 
+                
+            first_name = temp[0];
+            last_name = temp[1];  
+            
+            // get manager id
+            await myDb.queryDb(`SELECT id FROM employee WHERE (first_name = '${first_name}' AND last_name = '${last_name}')`)
+                .then(results => {
+                    managerId = results[0].id;
+                })
+                .catch(err => { throw err });
+
+            let employeeQuery = `SELECT e.id, e.first_name, e.last_name, r.title, d.dept_name AS department, CONCAT(m.first_name, ' ', m.last_name) AS manager 
+            FROM employee e INNER JOIN role r ON e.role_id = r.id INNER JOIN department d ON r.department_id = d.id LEFT JOIN employee m ON e.manager_id = m.id WHERE e.manager_id = ${managerId};`;
+
+            // myDb class, queryDb method
+            await myDb.queryDb(employeeQuery)
+                .then(results => { 
+                    console.log('\n');
+                    console.table(results); 
+                })
+                .then(() => {
+                    managerList = []; 
+                    menu(); 
+                })
+                .catch(err => { throw err }); 
+
+            
+    });
+}
+
+const getEmployeesByDept = () => {
+    let deptId;
+
+    //populate array
+    selectDepts.forEach((i) => {
+        deptList.push(i.department);               
+    });
+
     inquirer
-        .prompt(addDepartmentQuestion)
+        .prompt([
+            {
+                type: 'list',
+                name: 'dept_name',
+                message: 'Which department would you like view?',
+                choices: deptList,
+            }
+        ])
+        .then(async (answer) => {
+            // get id of name that matches
+            
+            // get manager id
+            await myDb.queryDb(`SELECT id FROM department WHERE (dept_name = '${answer.dept_name}')`)
+                .then(results => {
+                    deptId = results[0].id;
+                })
+                .catch(err => { throw err });
+
+            let employeeQuery = `SELECT e.id, e.first_name, e.last_name, r.title, d.dept_name AS department, CONCAT(m.first_name, ' ', m.last_name) AS manager 
+            FROM employee e INNER JOIN role r ON e.role_id = r.id INNER JOIN department d ON r.department_id = d.id LEFT JOIN employee m ON e.manager_id = m.id WHERE d.id = ${deptId};`;
+
+            // myDb class, queryDb method
+            await myDb.queryDb(employeeQuery)
+                .then(results => { 
+                    console.log('\n');
+                    console.table(results); 
+                })
+                .then(() => {
+                    deptList = []; 
+                    menu(); 
+                })
+                .catch(err => { throw err }); 
+
+            
+    });
+}
+
+const addDepartment = () => {
+
+    inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'dept_name',
+                message: 'What is the name of the department?'
+            }
+        ])
         .then(answer => {
             // check if entry already exist
             myDb.queryDb(`SELECT dept_name FROM department WHERE EXISTS (SELECT * FROM department WHERE dept_name = '${answer.dept_name}')`)
@@ -238,6 +265,31 @@ const addRole = () => {
     selectDepts.forEach((i) => {
         deptList.push(i.department);               
     });
+
+    const addRoleQuestions = [
+        {
+            type: 'input',
+            name: 'title',
+            message: 'What is the name of the role?'
+        },
+        {
+            type: 'input',
+            name: 'salary',
+            message: 'What is the salary of the role?',
+            validate(input) {
+                if (/^\d+$/g.test(input)) {
+                    return true;
+                }
+                throw Error('Please enter numbers only.');
+            },
+        },
+        {
+            type: 'list',
+            name: 'role_dept',
+            message: 'Which department does the role belong to?',
+            choices: deptList,
+        }
+    ];
     
     inquirer
         .prompt(addRoleQuestions)
@@ -282,7 +334,44 @@ const addEmployee = () => {
         employeeList.push(employeeName);    
     });       
 
-    employeeList.push('None');
+    employeeList.push('None');    
+
+    const addEmployeeQuesions = [
+        {
+            type: 'input',
+            name: 'fname',
+            message: 'What is the employee\'s first name?',
+            validate(input) {
+                if (/^[A-Z][a-z]+$/g.test(input)) {
+                    return true;
+                }
+                throw Error('Please be sure name is capitalized and enter first name only.');
+            },
+        },
+        {
+            type: 'input',
+            name: 'lname',
+            message: 'What is the employee\'s last name?',
+            validate(input) {
+                if (/^[A-Z][a-z]+$/g.test(input)) {
+                    return true;
+                }
+                throw Error('Please be sure name is capitalized and enter last name only.');
+            },
+        },
+        {
+            type: 'list',
+            name: 'role',
+            message: 'What is the employee\'s role?',
+            choices: roleList,
+        },
+        {
+            type: 'list',
+            name: 'manager',
+            message: 'Who is the employee\'s manager?',
+            choices: employeeList,
+        }
+    ];
 
     inquirer
         .prompt(addEmployeeQuesions)
@@ -343,17 +432,38 @@ const updateEmployee = () => {
     });
 
     // add none to employee list
-    managerList = [...employeeList, 'None']; // this works, just doesn't get to inquirer prompt like the other two
+    managerList = ['None', ...employeeList]; // this works, just doesn't get to inquirer prompt like the other two
 
     // fill role list
     selectRoles.forEach((i) => {
         roleList.push(i.title);               
     });
 
+    const updateRoleQuestions = [
+        {
+            type: 'list',
+            name: 'employee',
+            message: 'Which employee\'s role do you want to update?',
+            choices: employeeList,
+        },
+        {
+            type: 'list',
+            name: 'new_role',
+            message: 'Which role do you want to assign the selected employee?',
+            choices: roleList,
+        },
+        {
+            type: 'list',
+            name: 'manager',
+            message: 'Who is the employee\'s manager?',
+            choices: managerList,
+        }
+    ];
+
     inquirer
         .prompt(updateRoleQuestions)
         .then(async (answers) => {
-            console.log(answers);
+            console.log(managerList);
             // get id of name that matches
             let name = [answers.employee];
             let temp = name[0].split(' '); 
@@ -385,7 +495,7 @@ const updateEmployee = () => {
                 last_name = temp[1];                
 
                 // get manager id
-                myDb.queryDb(`SELECT id FROM employee WHERE (first_name = '${first_name}' AND last_name = '${last_name}')`)
+                await myDb.queryDb(`SELECT id FROM employee WHERE (first_name = '${first_name}' AND last_name = '${last_name}')`)
                     .then(results => {
                         managerId = results[0].id;
                     })
@@ -397,7 +507,7 @@ const updateEmployee = () => {
             // update role for employee
             myDb.queryDb(`UPDATE employee SET role_id = ${roleId}, manager_id = ${managerId} WHERE (id = ${employeeId})`)
                 .then(() => {
-                    console.log(`\n ${answers.fname} ${answers.lname} job title was successfully updated to ${answers.new_role}. \n`);
+                    console.log(`\n ${first_name} ${last_name} job title was successfully updated. \n`);
                 })      
                 .then(() => { init() })
                 .catch(err => { throw err });
@@ -405,3 +515,13 @@ const updateEmployee = () => {
 };
 
 init();
+
+// Update employee managers. check
+
+// View employees by manager. check
+
+// View employees by department. check
+
+// Delete departments, roles, and employees.
+
+// View the total utilized budget of a department—in other words, the combined salaries of all employees in that department.
