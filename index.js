@@ -13,7 +13,7 @@ const inquirer = require('inquirer');
 const cTable = require('console.table');
 
 // inquirer choices
-const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'View All Managers', 'View Employees by Department', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update An Employee Role', 'Exit'];
+const initOptions = ['View All Departments', 'View All Roles', 'View All Employees', 'View All Managers', 'View Employees by Department', 'Add a Department', 'Add a Role', 'Add An Employee', 'Update Employee', 'Delete Department', 'Delete Role', 'Delete Employee', 'View Budget', 'Exit'];
 let selectDepts, selectRoles, selectEmployee, selectManager;
 let deptList = [];
 let roleList = [];
@@ -22,7 +22,7 @@ let managerList = [];
 
 // start here
 const init = async () => {
-    // get db fields populate arrays
+    // updates arrays
     await getDept();
     await getRole();
     await getEmployee();
@@ -64,8 +64,20 @@ const menu = () => {
             case 'Add An Employee':
                 addEmployee();
                 break;
-            case 'Update An Employee Role':
+            case 'Update Employee':
                 updateEmployee();
+                break;
+            case 'Delete Department':
+                deleteDept();
+                break;
+            case 'Delete Role':
+                deleteRole();
+                break;
+            case 'Delete Employee':
+                deleteEmployee();
+                break;
+            case 'View Budget':
+                viewBudget();
                 break;
             case 'Exit':
                 myDb.end();
@@ -255,7 +267,8 @@ const addDepartment = () => {
             })           
             .then(() => { getDept() })
             .catch(err => { throw err });
-        });   
+        })
+        .then(() => { init() });   
 };
 
 const addRole = () => {
@@ -513,6 +526,99 @@ const updateEmployee = () => {
                 .catch(err => { throw err });
         });
 };
+
+const deleteDept = () => {
+    let departmentId;
+
+    //populate array
+    selectDepts.forEach((i) => {
+        deptList.push(i.department);               
+    });
+
+    const deleteDeptQuestions = [
+        {
+            type: 'list',
+            name: 'department',
+            message: 'Which department would you like to delete?',
+            choices: deptList,
+        },
+        {
+            type: 'confirm',
+            name: 'confirm',
+            message: 'Are you sure you want to delete this department?'
+        },
+    ];
+    
+    inquirer
+        .prompt(deleteDeptQuestions)
+        .then(async (answers) => {
+            if (answers.confirm) {
+                // get department id
+                await myDb.queryDb(`SELECT id FROM department WHERE (dept_name = '${answers.department}')`)
+                    .then(results => {
+                        departmentId = results[0].id;
+                    })
+                    .catch(err => { throw err });
+
+                // delete department by id
+                myDb.queryDb(`DELETE FROM department WHERE (id = ${departmentId})`)
+                    .then(() => {
+                        console.log(`\n ${answers.department} has been deleted.`);
+                    })  
+                    .catch(err => { throw err });
+            }      
+        })
+        .then(() => { init() });   
+};
+
+const deleteRole = () => {
+    // select role from list
+    let departmentId;
+
+    //populate array
+    selectDepts.forEach((i) => {
+        deptList.push(i.department);               
+    });
+
+    const deleteDeptQuestions = [
+        {
+            type: 'list',
+            name: 'department',
+            message: 'Which department would you like to delete?',
+            choices: deptList,
+        },
+        {
+            type: 'confirm',
+            name: 'confirm',
+            message: 'Are you sure you want to delete this department?'
+        },
+    ];
+    
+    inquirer
+        .prompt(deleteDeptQuestions)
+        .then(async (answers) => {
+            if (answers.confirm) {
+                // get department id
+                await myDb.queryDb(`SELECT id FROM department WHERE (dept_name = '${answers.department}')`)
+                    .then(results => {
+                        departmentId = results[0].id;
+                    })
+                    .catch(err => { throw err });
+
+                // delete department by id
+                myDb.queryDb(`DELETE FROM department WHERE (id = ${departmentId})`)
+                    .then(() => {
+                        console.log(`\n ${answers.department} has been deleted.`);
+                    })  
+                    .catch(err => { throw err });
+            }      
+        })
+        .then(() => { init() });   
+};
+const deleteEmployee = () => {
+    // select employee from list
+};
+const viewBudget = () => {};
 
 init();
 
