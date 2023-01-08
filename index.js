@@ -50,7 +50,7 @@ const menu = () => {
                 getEmployee(true, true);
                 break;
             case 'View All Managers':
-                getManagers(true, true);
+                getManagers();
                 break;
             case 'View Employees by Department':
                 getEmployeesByDept();
@@ -84,46 +84,42 @@ const menu = () => {
                 break;         
         }
     });
-}
+};
 
-const getDept = (display, timeout) => {      
-    
-    if (timeout) setTimeout(() => {menu()}, 1000);
+const getDept = async (display, menuRequest) => {      
 
     // myDb class, queryDb method
-    return myDb.queryDb(`SELECT d.id, d.dept_name AS department FROM department d ORDER BY d.id ASC`)
+    await myDb.queryDb(`SELECT d.id, d.dept_name AS department FROM department d ORDER BY d.id ASC`)
         .then(results => { 
             // only show table when desired
             if (display) { console.log('\n'); console.table(results); }
 
             selectDepts = results;
         })
+        .then(() => { if (menuRequest) menu() })
         .catch(err => { throw err });      
-}
+};
 
-const getRole = (display, timeout) => {
+const getRole = async (display, menuRequest) => {
 
-    if (timeout) setTimeout(() => {menu()}, 1000);
-
-    return myDb.queryDb(`SELECT r.id, r.title, d.dept_name AS department, r.salary FROM role r INNER JOIN department d ON r.department_id = d.id ORDER BY r.id ASC`)
+    await myDb.queryDb(`SELECT r.id, r.title, d.dept_name AS department, r.salary FROM role r INNER JOIN department d ON r.department_id = d.id ORDER BY r.id ASC`)
         .then(results => { 
             // only show table when desired
             if (display) { console.log('\n'); console.table(results); } 
 
             selectRoles = results;
         })
+        .then(() => { if (menuRequest) menu() })
         .catch(err => { throw err });
-}
+};
 
-const getEmployee = (display, timeout) => {
-
-    if (timeout) setTimeout(() => {menu()}, 1000);
+const getEmployee = async (display, menuRequest) => {
 
     let employeeQuery = `SELECT e.id, e.first_name, e.last_name, r.title, d.dept_name AS department, r.salary, CONCAT(m.first_name, ' ', m.last_name) AS manager 
     FROM employee e INNER JOIN role r ON e.role_id = r.id INNER JOIN department d ON r.department_id = d.id LEFT JOIN employee m ON e.manager_id = m.id ORDER BY e.last_name ASC`;
 
     // myDb class, queryDb method
-    return myDb.queryDb(employeeQuery)
+    await myDb.queryDb(employeeQuery)
         .then(results => { 
             // only show table when desired
             if (display) { console.log('\n'); console.table(results); } 
@@ -131,8 +127,9 @@ const getEmployee = (display, timeout) => {
             // populate arrays
             selectEmployee = results;
         })
+        .then(() => { if (menuRequest) menu() })
         .catch(err => { throw err });
-}
+};
 
 const getManagers = async () => {
     
@@ -160,7 +157,7 @@ const getManagers = async () => {
                 choices: managerList,
             }
         ])
-        .then(async (answer) => {
+        .then(async answer => {
             // get id of name that matches
             let name = [answer.manager];
             let temp = name[0].split(' '); 
@@ -176,23 +173,21 @@ const getManagers = async () => {
                 .catch(err => { throw err });
 
             let employeeQuery = `SELECT e.id, e.first_name, e.last_name, r.title, d.dept_name AS department, CONCAT(m.first_name, ' ', m.last_name) AS manager 
-            FROM employee e INNER JOIN role r ON e.role_id = r.id INNER JOIN department d ON r.department_id = d.id LEFT JOIN employee m ON e.manager_id = m.id WHERE e.manager_id = ${managerId};`;
+            FROM employee e INNER JOIN role r ON e.role_id = r.id INNER JOIN department d ON r.department_id = d.id LEFT JOIN employee m ON e.manager_id = m.id WHERE (e.manager_id = ${managerId})`;
 
             // myDb class, queryDb method
             await myDb.queryDb(employeeQuery)
                 .then(results => { 
                     console.log('\n');
                     console.table(results); 
-                })
-                .then(() => {
-                    managerList = []; 
-                    menu(); 
-                })
-                .catch(err => { throw err }); 
 
-            
-    });
-}
+                    // prevent repop
+                    managerList = [];
+                })
+                .catch(err => { throw err });            
+        })
+        .then(() => { menu() });
+};
 
 const getEmployeesByDept = () => {
     let deptId;
@@ -211,7 +206,7 @@ const getEmployeesByDept = () => {
                 choices: deptList,
             }
         ])
-        .then(async (answer) => {
+        .then(async answer => {
             // get id of name that matches
             
             // get manager id
@@ -222,23 +217,20 @@ const getEmployeesByDept = () => {
                 .catch(err => { throw err });
 
             let employeeQuery = `SELECT e.id, e.first_name, e.last_name, r.title, d.dept_name AS department, CONCAT(m.first_name, ' ', m.last_name) AS manager 
-            FROM employee e INNER JOIN role r ON e.role_id = r.id INNER JOIN department d ON r.department_id = d.id LEFT JOIN employee m ON e.manager_id = m.id WHERE d.id = ${deptId};`;
+            FROM employee e INNER JOIN role r ON e.role_id = r.id INNER JOIN department d ON r.department_id = d.id LEFT JOIN employee m ON e.manager_id = m.id WHERE (d.id = ${deptId})`;
 
             // myDb class, queryDb method
             await myDb.queryDb(employeeQuery)
                 .then(results => { 
                     console.log('\n');
-                    console.table(results); 
-                })
-                .then(() => {
-                    deptList = []; 
-                    menu(); 
-                })
-                .catch(err => { throw err }); 
+                    console.table(results);
 
-            
-    });
-}
+                    deptList = [];
+                })
+                .catch(err => { throw err });            
+        })
+        .then(() => { menu() });
+};
 
 const addDepartment = () => {
 
@@ -250,17 +242,19 @@ const addDepartment = () => {
                 message: 'What is the name of the department?'
             }
         ])
-        .then(answer => {
+        .then(async answer => {
             // check if entry already exist
-            myDb.queryDb(`SELECT dept_name FROM department WHERE EXISTS (SELECT * FROM department WHERE dept_name = '${answer.dept_name}')`)
-                .then(results => {
-                //console.log(results[0].length);
+            await myDb.queryDb(`SELECT dept_name FROM department WHERE EXISTS (SELECT * FROM department WHERE (dept_name = '${answer.dept_name}'))`)
+                .then(async results => {
+                    
                 if (results.length > 0) {
                     console.log('\n Department already exist in database. \n');
                 } else { 
-                    myDb.queryDb(`INSERT INTO department(dept_name) VALUES ('${answer.dept_name}')`)
+                    await myDb.queryDb(`INSERT INTO department(dept_name) VALUES ('${answer.dept_name}')`)
                         .then(() => {
-                            console.log(`\n ${answer.dept_name} was successfully added to Departments. \n`);
+                            console.log(`
+${answer.dept_name} was successfully added to Departments.
+`);
                         })
                         .catch(err => { throw err })
                 }
@@ -268,7 +262,7 @@ const addDepartment = () => {
             .then(() => { getDept() })
             .catch(err => { throw err });
         })
-        .then(() => { init() });   
+        .then(() => { menu() });   
 };
 
 const addRole = () => {
@@ -306,33 +300,37 @@ const addRole = () => {
     
     inquirer
         .prompt(addRoleQuestions)
-        .then(answers => {
+        .then(async answers => {
             // get department id
-            myDb.queryDb(`SELECT id FROM department WHERE (dept_name = '${answers.role_dept}')`)
+            await myDb.queryDb(`SELECT id FROM department WHERE (dept_name = '${answers.role_dept}')`)
                 .then(results => {
                     departmentId = results[0].id;
                 })
                 .catch(err => { throw err });
 
             // check if role name already exist
-            myDb.queryDb(`SELECT title FROM role WHERE EXISTS (SELECT * FROM role WHERE (title = '${answers.title}'))`)
-                .then(results => {
+            await myDb.queryDb(`SELECT title FROM role WHERE EXISTS (SELECT * FROM role WHERE (title = '${answers.title}'))`)
+                .then(async results => {
                     if (results.length > 0) {
                         console.log('\n Role already exist in database. \n');
                     } else { 
-                        myDb.queryDb(`INSERT INTO role(title, salary, department_id) VALUES ('${answers.title}', ${answers.salary}, ${departmentId})`)
+                        await myDb.queryDb(`INSERT INTO role(title, salary, department_id) VALUES ('${answers.title}', ${answers.salary}, ${departmentId})`)
                             .then(() => {
-                                console.log(`\n ${answers.title} was successfully added to Roles. \n`);
+                                console.log(`
+${answers.title} was successfully added to Roles.
+`);
                             })
                             .catch(err => { throw err });
                     }
-                })        
-            .then(() => { init() })
-            .catch(err => { throw err });
-        });           
+                })    
+                .then(() => { getRole() })    
+                .catch(err => { throw err });
+        })   
+        .then(() => { menu() });           
 };
 
 const addEmployee = () => {
+    employeeList = [];
 
     let roleId, employeeName, managerId, first_name, last_name;
     
@@ -347,7 +345,7 @@ const addEmployee = () => {
         employeeList.push(employeeName);    
     });       
 
-    employeeList.push('None');    
+    employeeList.unshift('None');    
 
     const addEmployeeQuesions = [
         {
@@ -388,7 +386,7 @@ const addEmployee = () => {
 
     inquirer
         .prompt(addEmployeeQuesions)
-        .then(async (answers) => {
+        .then(async answers => {
 
             //get role id
             await myDb.queryDb(`SELECT id FROM role WHERE (title = '${answers.role}')`)
@@ -397,7 +395,10 @@ const addEmployee = () => {
                 })
                 .catch(err => { throw err });
 
-            if (answers.manager !== 'None') {
+            if (answers.manager === 'None') {
+                // null value
+                managerId = 'NULL';
+            } else {
                 // separate employee name for db query
                 let name = [answers.manager];
 
@@ -412,29 +413,31 @@ const addEmployee = () => {
                         managerId = results[0].id;
                     })
                     .catch(err => { throw err });
-            } else {
-                managerId = '';
             }
 
             // check if employee already exist
-            myDb.queryDb(`SELECT id FROM employee WHERE EXISTS (SELECT * FROM employee WHERE (first_name = '${answers.fname}' AND last_name = '${answers.lname}'))`)
-                .then(results => {
+            await myDb.queryDb(`SELECT id FROM employee WHERE EXISTS (SELECT * FROM employee WHERE (first_name = '${answers.fname}' AND last_name = '${answers.lname}'))`)
+                .then(async results => {
                     if (results.length > 0) {
                         console.log('\n Employee already exist in database. \n');
                     } else { 
-                        myDb.queryDb(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answers.fname}', '${answers.lname}', ${roleId}, ${managerId})`)
+                        await myDb.queryDb(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answers.fname}', '${answers.lname}', ${roleId}, ${managerId})`)
                             .then(() => {
-                                console.log(`\n ${answers.fname} ${answers.lname} was successfully added to Employees. \n`);
+                                console.log(`
+${answers.fname} ${answers.lname} was added to Employees.
+`);
                             })
                             .catch(err => { throw err });
                     }
                 })        
-            .then(() => { init() })
+            .then(() => { getEmployee() })
             .catch(err => { throw err });
-        });   
+        })  
+        .then(() => { menu() });   
 };
 
 const updateEmployee = () => {
+    employeeList = [];
 
     let employeeName, employeeId, roleId, managerId, first_name, last_name;
 
@@ -445,7 +448,7 @@ const updateEmployee = () => {
     });
 
     // add none to employee list
-    managerList = ['None', ...employeeList]; // this works, just doesn't get to inquirer prompt like the other two
+    managerList = ['None', ...employeeList];
 
     // fill role list
     selectRoles.forEach((i) => {
@@ -475,11 +478,11 @@ const updateEmployee = () => {
 
     inquirer
         .prompt(updateRoleQuestions)
-        .then(async (answers) => {
-            console.log(managerList);
+        .then(async answers => {
+            
             // get id of name that matches
-            let name = [answers.employee];
-            let temp = name[0].split(' '); 
+            const name = [answers.employee];
+            const temp = name[0].split(' '); 
                 
             first_name = temp[0];
             last_name = temp[1];
@@ -498,7 +501,9 @@ const updateEmployee = () => {
                 })
                 .catch(err => { throw err });
             
-            if (answers.manager !== 'None') {
+            if (answers.manager === 'None') { 
+                managerId = 'NULL';
+            } else {
                 // separate employee name for db query
                 let name = [answers.manager];
 
@@ -513,18 +518,19 @@ const updateEmployee = () => {
                         managerId = results[0].id;
                     })
                     .catch(err => { throw err });
-            } else {
-                managerId = '';
             }
             
-            // update role for employee
-            myDb.queryDb(`UPDATE employee SET role_id = ${roleId}, manager_id = ${managerId} WHERE (id = ${employeeId})`)
+            // update role and manager for employee
+            await myDb.queryDb(`UPDATE employee SET role_id = ${roleId}, manager_id = ${managerId} WHERE (id = ${employeeId})`)
                 .then(() => {
-                    console.log(`\n ${first_name} ${last_name} job title was successfully updated. \n`);
+                    console.log(`
+${answers.employee} job title was successfully updated.
+`);
                 })      
-                .then(() => { init() })
+                .then(() => { getEmployee() })
                 .catch(err => { throw err });
-        });
+        })
+        .then(() => { menu() });
 };
 
 const deleteDept = () => {
@@ -551,7 +557,8 @@ const deleteDept = () => {
     
     inquirer
         .prompt(deleteDeptQuestions)
-        .then(async (answers) => {
+        .then(async answers => {
+
             if (answers.confirm) {
                 // get department id
                 await myDb.queryDb(`SELECT id FROM department WHERE (dept_name = '${answers.department}')`)
@@ -560,74 +567,172 @@ const deleteDept = () => {
                     })
                     .catch(err => { throw err });
 
-                // delete department by id
-                myDb.queryDb(`DELETE FROM department WHERE (id = ${departmentId})`)
-                    .then(() => {
-                        console.log(`\n ${answers.department} has been deleted.`);
-                    })  
+                // does department have employees?
+                await myDb.queryDb(`SELECT d.id, COUNT(e.id) FROM department d INNER JOIN role r ON d.id = r.department_id INNER JOIN employee e ON r.id = e.role_id WHERE d.id = ${departmentId}`)
+                    .then(async results => {
+                        if (results.length > 0) {
+                            console.log(`
+Please reassign employee(s) and role(s) before deleting ${answers.department}.
+`);
+                        } else {
+                            // delete department by id
+                            await myDb.queryDb(`DELETE FROM department WHERE (id = ${departmentId})`)
+                                .then(() => {
+                                    console.log(`
+${answers.department} has been deleted.
+`);
+                                })  
+                                .catch(err => { throw err });
+                        }
+                    })
+                    .then(() => { getDept() })
                     .catch(err => { throw err });
             }      
         })
-        .then(() => { init() });   
+        .then(() => { menu() });   
 };
 
 const deleteRole = () => {
-    // select role from list
-    let departmentId;
+    roleList = [];
+
+    let roleId;
 
     //populate array
-    selectDepts.forEach((i) => {
-        deptList.push(i.department);               
+    selectRoles.forEach((i) => {
+        roleList.push(i.title);               
     });
 
-    const deleteDeptQuestions = [
+    const deleteRoleQuestions = [
         {
             type: 'list',
-            name: 'department',
-            message: 'Which department would you like to delete?',
-            choices: deptList,
+            name: 'title',
+            message: 'Which role would you like to delete?',
+            choices: roleList,
         },
         {
             type: 'confirm',
             name: 'confirm',
-            message: 'Are you sure you want to delete this department?'
+            message: 'Are you sure you want to delete this role?'
         },
     ];
     
     inquirer
-        .prompt(deleteDeptQuestions)
-        .then(async (answers) => {
+        .prompt(deleteRoleQuestions)
+        .then(async answers => {
+
             if (answers.confirm) {
-                // get department id
-                await myDb.queryDb(`SELECT id FROM department WHERE (dept_name = '${answers.department}')`)
+                // get role id
+                await myDb.queryDb(`SELECT id FROM role WHERE (title = '${answers.title}')`)
                     .then(results => {
-                        departmentId = results[0].id;
+                        roleId = results[0].id;
                     })
                     .catch(err => { throw err });
 
-                // delete department by id
-                myDb.queryDb(`DELETE FROM department WHERE (id = ${departmentId})`)
-                    .then(() => {
-                        console.log(`\n ${answers.department} has been deleted.`);
-                    })  
+                // does role have employees?
+                await myDb.queryDb(`SELECT id FROM employee WHERE EXISTS (SELECT * FROM employee WHERE (role_id = '${roleId}'))`)
+                    .then(async results => {
+                        if (results.length > 0) {
+                            console.log(`
+Please reassign employee(s) to another position before deleting ${answers.title}.
+`);
+                        } else { 
+                            // delete role by id
+                            await myDb.queryDb(`DELETE FROM role WHERE (id = ${roleId})`)
+                                .then(() => {
+                                    console.log(`
+${answers.title} has been deleted.
+`);
+                                })  
+                                .catch(err => { throw err });
+                        }
+                    })
+                    .then(() => { getRole() })
                     .catch(err => { throw err });
             }      
         })
-        .then(() => { init() });   
+        .then(() => { menu() });   
 };
+
 const deleteEmployee = () => {
-    // select employee from list
+
+    let employeeName, employeeId, first_name, last_name;
+
+    // concat first and last names to build employeeList
+    selectEmployee.forEach((i) => {
+        employeeName = `${i.first_name} ${i.last_name}`;
+        employeeList.push(employeeName); 
+    });
+
+    const deleteEmployeeQuestions = [
+        {
+            type: 'list',
+            name: 'full_name',
+            message: 'Which employee would you like to remove?',
+            choices: employeeList,
+        },
+        {
+            type: 'confirm',
+            name: 'confirm',
+            message: 'Are you sure you want to remove this employee?'
+        },
+    ];
+    
+    inquirer
+        .prompt(deleteEmployeeQuestions)
+        .then(async answers => {
+
+            let name = [answers.full_name];
+
+            let temp = name[0].split(' '); 
+            
+            first_name = temp[0];
+            last_name = temp[1];                
+
+            if (answers.confirm) {
+                // get employee id
+                await myDb.queryDb(`SELECT id FROM employee WHERE (first_name = '${first_name}' AND last_name = '${last_name}')`)
+                    .then(results => {
+                        employeeId = results[0].id;
+                    })
+                    .catch(err => { throw err });
+
+                // is employee manager?
+                await myDb.queryDb(`SELECT id FROM employee WHERE EXISTS (SELECT * FROM employee WHERE (manager_id = '${employeeId}'))`)
+                    .then(async results => {
+                        if (results.length > 0) {
+                            console.log(`
+Please reassign team member(s) to another manager before removing ${answers.full_name}.
+`);
+                        } else { 
+                            // delete employee by id
+                            await myDb.queryDb(`DELETE FROM employee WHERE (id = ${employeeId})`)
+                                .then(() => {
+                                    console.log(`
+${answers.full_name} has been removed.
+`);
+                                })
+                                .catch(err => { throw err });
+                        }
+                    })  
+                    .then(() => { getEmployee() })
+                    .catch(err => { throw err });                    
+            }      
+        })
+        .then(() => { menu() }); 
 };
-const viewBudget = () => {};
+
+const viewBudget = async () => {
+
+    let roleQuery = `SELECT d.dept_name AS department, SUM(r.salary) AS total_salary FROM role r INNER JOIN department d ON d.id = r.department_id 
+    INNER JOIN employee e ON e.role_id = r.id GROUP BY d.dept_name ORDER BY d.id`;
+
+    await myDb.queryDb(roleQuery)
+            .then(results => { 
+                console.log('\n');
+                console.table(results);
+            })
+            .then(() => { menu() })
+            .catch(err => { throw err });  
+};
 
 init();
-
-// Update employee managers. check
-
-// View employees by manager. check
-
-// View employees by department. check
-
-// Delete departments, roles, and employees.
-
-// View the total utilized budget of a department—in other words, the combined salaries of all employees in that department.
