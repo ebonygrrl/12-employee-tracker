@@ -3,7 +3,6 @@ const myDbConfig = require('./utils/connection');
 
 // get class
 const dbQuery = require('./lib/query');
-const dbViews = require('./lib/query-view');
 
 // wire db connection to query class
 let myDb = new dbQuery(myDbConfig);
@@ -723,8 +722,8 @@ ${answers.full_name} has been removed.
 
 const viewBudget = async () => {
 
-    let roleQuery = `SELECT d.dept_name AS department, SUM(r.salary) AS total_salary FROM role r INNER JOIN department d ON d.id = r.department_id 
-    INNER JOIN employee e ON e.role_id = r.id GROUP BY d.dept_name ORDER BY d.id`;
+    let roleQuery = `SELECT d.dept_name AS department, SUM(r.salary) AS total_salary 
+    FROM department d INNER JOIN role r ON r.department_id = d.id INNER JOIN employee e ON e.role_id = r.id GROUP BY department`;
 
     await myDb.queryDb(roleQuery)
             .then(results => { 
