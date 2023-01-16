@@ -43,7 +43,7 @@ Once the application begins, choose an option from the main menu by using the up
 ## Demo
 Here's a [video](https://youtu.be/nFIlcVQHYB8) of the application in use.
 
-![Video thumbnail](./public/img/youtube-screenshot.jpg)](https://youtu.be/nFIlcVQHYB8)
+[![Video thumbnail](./public/img/youtube-screenshot.jpg)](https://youtu.be/nFIlcVQHYB8)
 
 A few screenshots of this application in action.
 
