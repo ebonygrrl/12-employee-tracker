@@ -43,17 +43,17 @@ Once the application begins, choose an option from the main menu by using the up
 ## Demo
 Here's a [video](https://youtu.be/nFIlcVQHYB8) of the application in use.
 
-[![Video thumbnail](./public/img/youtube-screenshot.jpg)](https://youtu.be/nFIlcVQHYB8)
+![Video thumbnail](./public/img/youtube-screenshot.jpg)](https://youtu.be/nFIlcVQHYB8)
 
 A few screenshots of this application in action.
 
-[![Main Menu](./public/img/main-menu.jpg)]
+![Main Menu](./public/img/main-menu.jpg)
 
-[![Main Menu](./public/img/view-budget.jpg)]
+![Main Menu](./public/img/view-budget.jpg)
 
 Working through the View Budget query.
 
-[![MySQL Workbench]](./public/img/sql-query.jpg)]
+![MySQL Workbench](./public/img/sql-query.jpg)
 
 <a name="license"></a> 
 ## License
